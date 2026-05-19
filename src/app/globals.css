@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter), 'Inter', system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-sans: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
+  --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --font-sc: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -18,11 +18,6 @@
   --color-sidebar-primary: var(--sidebar-primary);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -39,61 +34,62 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+  --radius-sm: 0;
+  --radius-md: 0;
+  --radius-lg: 0;
+  --radius-xl: 0;
 
-  /* GunDog Market Brand Colors — same visual system as OutfitterDesk */
-  --color-ink: #0E0E0E;
-  --color-ink-2: #1A1A1A;
-  --color-orange: #D4600A;
-  --color-orange-deep: #A84808;
-  --color-orange-soft: #E8895A;
-  --color-bone: #F4EFE5;
-  --color-bone-2: #EAE4D6;
-  --color-sand: #D9C8A6;
-  --color-sand-2: #C8B58E;
-  --color-steel: #7C7A6E;
-  --color-copper: #B8825A;
+  /* GunDog Exchange Brand Colors */
+  --color-field: #2D3A2A;
+  --color-field-deep: #1C2418;
+  --color-ochre: #B8893F;
+  --color-ochre-deep: #8B6A2E;
+  --color-bone: #EFE7D4;
+  --color-bone-soft: #F6F0E1;
+  --color-oxblood: #6B2018;
+  --color-charcoal: #1A1A18;
 }
 
 :root {
-  --background: #F4EFE5;
-  --foreground: #0E0E0E;
-  --card: #ffffff;
-  --card-foreground: #0E0E0E;
-  --popover: #ffffff;
-  --popover-foreground: #0E0E0E;
-  --primary: #D4600A;
-  --primary-foreground: #ffffff;
-  --secondary: #EAE4D6;
-  --secondary-foreground: #0E0E0E;
-  --muted: #EAE4D6;
-  --muted-foreground: #7C7A6E;
-  --accent: #D9C8A6;
-  --accent-foreground: #0E0E0E;
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: #D9C8A6;
-  --input: #D9C8A6;
-  --ring: #D4600A;
-  --chart-1: #D4600A;
-  --chart-2: #0E0E0E;
-  --chart-3: #B8825A;
-  --chart-4: #7C7A6E;
-  --chart-5: #D9C8A6;
+  --background: #EFE7D4;
+  --foreground: #1C2418;
+  --card: #F6F0E1;
+  --card-foreground: #1C2418;
+  --popover: #F6F0E1;
+  --popover-foreground: #1C2418;
+  --primary: #2D3A2A;
+  --primary-foreground: #EFE7D4;
+  --secondary: #F6F0E1;
+  --secondary-foreground: #2D3A2A;
+  --muted: #E8DFCB;
+  --muted-foreground: #8B6A2E;
+  --accent: #B8893F;
+  --accent-foreground: #1C2418;
+  --destructive: #6B2018;
+  --border: rgba(184,137,63,0.3);
+  --input: rgba(184,137,63,0.3);
+  --ring: #B8893F;
   --radius: 0rem;
-  --sidebar: #0E0E0E;
-  --sidebar-foreground: #F4EFE5;
-  --sidebar-primary: #D4600A;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #1A1A1A;
-  --sidebar-accent-foreground: #F4EFE5;
-  --sidebar-border: rgba(255,255,255,0.1);
-  --sidebar-ring: #D4600A;
+  --sidebar: #1C2418;
+  --sidebar-foreground: #EFE7D4;
+  --sidebar-primary: #B8893F;
+  --sidebar-primary-foreground: #1C2418;
+  --sidebar-accent: #2D3A2A;
+  --sidebar-accent-foreground: #EFE7D4;
+  --sidebar-border: rgba(239,231,212,0.1);
+  --sidebar-ring: #B8893F;
+
+  /* Brand tokens as CSS vars for easy inline use */
+  --field: #2D3A2A;
+  --field-deep: #1C2418;
+  --ochre: #B8893F;
+  --ochre-deep: #8B6A2E;
+  --bone: #EFE7D4;
+  --bone-soft: #F6F0E1;
+  --oxblood: #6B2018;
+  --charcoal: #1A1A18;
+  --ink: #2D3A2A;
+  --rule: rgba(184,137,63,0.35);
 }
 
 @layer base {
@@ -102,76 +98,99 @@
     border-radius: 0 !important;
   }
   body {
-    background: #F4EFE5;
-    color: #0E0E0E;
-    font-family: var(--font-sans), 'Inter', system-ui, sans-serif;
+    background: #EFE7D4;
+    color: #2D3A2A;
+    font-family: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
+    font-size: 18px;
+    line-height: 1.55;
   }
   html {
-    font-family: var(--font-sans), 'Inter', system-ui, sans-serif;
+    font-family: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
   }
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-heading), 'Montserrat', system-ui, sans-serif;
+    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+    font-style: italic;
+    font-weight: 500;
+    letter-spacing: -0.015em;
+    line-height: 1.05;
+    color: #1C2418;
   }
 }
 
-/* GunDog Market Design System */
-.brand-card {
-  background: white;
-  border: 1px solid #D9C8A6;
-  border-radius: 0;
+/* GDX font utilities */
+.gx-serif {
+  font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  font-style: italic;
+  font-weight: 500;
 }
 
-.brand-card-shadow {
-  background: white;
-  border: 1px solid #D9C8A6;
-  box-shadow: 3px 3px 0 #D9C8A6;
-  border-radius: 0;
+.gx-sc {
+  font-family: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
+  font-weight: 500;
+  font-style: normal;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }
 
-.brand-btn {
-  background: #D4600A;
-  color: white;
+.gx-body {
+  font-family: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
+  font-weight: 400;
+}
+
+.gx-mono {
+  font-family: ui-monospace, 'Courier New', monospace;
+  letter-spacing: 0.06em;
+}
+
+/* Ochre rule divider */
+.gx-rule {
+  height: 1px;
+  background: var(--ochre);
+  opacity: 0.5;
+}
+
+/* GDX card */
+.gx-card {
+  background: var(--bone-soft);
+  border: 1px solid rgba(184,137,63,0.25);
+}
+
+/* GDX button — field green fill */
+.gx-btn {
+  background: var(--field);
+  color: var(--bone-soft);
+  font-family: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
   border: none;
-  border-radius: 0;
-  font-weight: 600;
-  font-family: var(--font-sans), 'Inter', system-ui, sans-serif;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  padding: 0.625rem 1.25rem;
   cursor: pointer;
   transition: background 0.15s;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.8125rem;
+  display: inline-block;
+  font-size: 0.9rem;
 }
 
-.brand-btn:hover {
-  background: #A84808;
+.gx-btn:hover {
+  background: var(--field-deep);
 }
 
-.brand-btn-ghost {
+/* GDX ghost button */
+.gx-btn-ghost {
   background: transparent;
-  color: #0E0E0E;
-  border: 1px solid #D9C8A6;
-  border-radius: 0;
-  font-weight: 600;
-  padding: 0.625rem 1.25rem;
+  color: var(--bone-soft);
+  font-family: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.75rem 2rem;
+  border: 1px solid rgba(239,231,212,0.4);
   cursor: pointer;
   transition: background 0.15s;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
+  display: inline-block;
+  font-size: 0.9rem;
 }
 
-.brand-btn-ghost:hover {
-  background: #EAE4D6;
-}
-
-/* Montserrat heading utility */
-.font-display {
-  font-family: 'Montserrat', var(--font-heading), system-ui, sans-serif;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: -0.02em;
+.gx-btn-ghost:hover {
+  background: rgba(239,231,212,0.1);
 }
