@@ -7,8 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
-  --font-display: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
+  --font-sans: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-display: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  --font-serif: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
   --font-sc: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -39,57 +40,52 @@
   --radius-lg: 0;
   --radius-xl: 0;
 
-  /* GunDog Exchange Brand Colors */
-  --color-field: #2D3A2A;
-  --color-field-deep: #1C2418;
-  --color-ochre: #B8893F;
-  --color-ochre-deep: #8B6A2E;
-  --color-bone: #EFE7D4;
-  --color-bone-soft: #F6F0E1;
-  --color-oxblood: #6B2018;
-  --color-charcoal: #1A1A18;
+  /* GunDog Exchange — Blended Brand Palette */
+  --color-ink: #0E0E0E;
+  --color-ink-2: #1A1A1A;
+  --color-orange: #D4600A;
+  --color-orange-deep: #A84808;
+  --color-bone: #F4EFE5;
+  --color-bone-2: #EAE4D6;
+  --color-sand: #D9C8A6;
+  --color-steel: #7C7A6E;
 }
 
 :root {
-  --background: #EFE7D4;
-  --foreground: #1C2418;
-  --card: #F6F0E1;
-  --card-foreground: #1C2418;
-  --popover: #F6F0E1;
-  --popover-foreground: #1C2418;
-  --primary: #2D3A2A;
-  --primary-foreground: #EFE7D4;
-  --secondary: #F6F0E1;
-  --secondary-foreground: #2D3A2A;
-  --muted: #E8DFCB;
-  --muted-foreground: #8B6A2E;
-  --accent: #B8893F;
-  --accent-foreground: #1C2418;
-  --destructive: #6B2018;
-  --border: rgba(184,137,63,0.3);
-  --input: rgba(184,137,63,0.3);
-  --ring: #B8893F;
+  --background: #F4EFE5;
+  --foreground: #0E0E0E;
+  --card: #ffffff;
+  --card-foreground: #0E0E0E;
+  --popover: #ffffff;
+  --popover-foreground: #0E0E0E;
+  --primary: #D4600A;
+  --primary-foreground: #ffffff;
+  --secondary: #EAE4D6;
+  --secondary-foreground: #0E0E0E;
+  --muted: #EAE4D6;
+  --muted-foreground: #7C7A6E;
+  --accent: #D9C8A6;
+  --accent-foreground: #0E0E0E;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #D9C8A6;
+  --input: #D9C8A6;
+  --ring: #D4600A;
   --radius: 0rem;
-  --sidebar: #1C2418;
-  --sidebar-foreground: #EFE7D4;
-  --sidebar-primary: #B8893F;
-  --sidebar-primary-foreground: #1C2418;
-  --sidebar-accent: #2D3A2A;
-  --sidebar-accent-foreground: #EFE7D4;
-  --sidebar-border: rgba(239,231,212,0.1);
-  --sidebar-ring: #B8893F;
+  --sidebar: #0E0E0E;
+  --sidebar-foreground: #F4EFE5;
+  --sidebar-primary: #D4600A;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #1A1A1A;
+  --sidebar-accent-foreground: #F4EFE5;
+  --sidebar-border: rgba(255,255,255,0.1);
+  --sidebar-ring: #D4600A;
 
-  /* Brand tokens as CSS vars for easy inline use */
-  --field: #2D3A2A;
-  --field-deep: #1C2418;
-  --ochre: #B8893F;
-  --ochre-deep: #8B6A2E;
-  --bone: #EFE7D4;
-  --bone-soft: #F6F0E1;
-  --oxblood: #6B2018;
-  --charcoal: #1A1A18;
-  --ink: #2D3A2A;
-  --rule: rgba(184,137,63,0.35);
+  /* Shorthand tokens */
+  --ink: #0E0E0E;
+  --orange: #D4600A;
+  --bone: #F4EFE5;
+  --sand: #D9C8A6;
+  --steel: #7C7A6E;
 }
 
 @layer base {
@@ -98,99 +94,75 @@
     border-radius: 0 !important;
   }
   body {
-    background: #EFE7D4;
-    color: #2D3A2A;
-    font-family: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
-    font-size: 18px;
-    line-height: 1.55;
+    background: #F4EFE5;
+    color: #0E0E0E;
+    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
   }
   html {
-    font-family: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
-  }
-  h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
-    font-style: italic;
-    font-weight: 500;
-    letter-spacing: -0.015em;
-    line-height: 1.05;
-    color: #1C2418;
+    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
   }
 }
 
-/* GDX font utilities */
+/* Font utilities */
+.gx-display {
+  font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+}
+
 .gx-serif {
   font-family: var(--font-cormorant), 'Cormorant Garamond', Georgia, serif;
   font-style: italic;
   font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .gx-sc {
   font-family: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
   font-weight: 500;
   font-style: normal;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
 }
 
-.gx-body {
-  font-family: var(--font-eb-garamond), 'EB Garamond', Georgia, serif;
-  font-weight: 400;
-}
-
-.gx-mono {
-  font-family: ui-monospace, 'Courier New', monospace;
-  letter-spacing: 0.06em;
-}
-
-/* Ochre rule divider */
-.gx-rule {
-  height: 1px;
-  background: var(--ochre);
-  opacity: 0.5;
-}
-
-/* GDX card */
-.gx-card {
-  background: var(--bone-soft);
-  border: 1px solid rgba(184,137,63,0.25);
-}
-
-/* GDX button — field green fill */
+/* Primary CTA — orange fill */
 .gx-btn {
-  background: var(--field);
-  color: var(--bone-soft);
-  font-family: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  background: #D4600A;
+  color: white;
+  font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 0.75rem 2rem;
+  padding: 0.875rem 2rem;
   border: none;
   cursor: pointer;
   transition: background 0.15s;
   display: inline-block;
-  font-size: 0.9rem;
+  text-decoration: none;
 }
 
-.gx-btn:hover {
-  background: var(--field-deep);
-}
+.gx-btn:hover { background: #A84808; }
 
-/* GDX ghost button */
+/* Ghost button */
 .gx-btn-ghost {
   background: transparent;
-  color: var(--bone-soft);
-  font-family: var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif;
-  font-weight: 500;
-  letter-spacing: 0.18em;
+  color: rgba(244,239,229,0.9);
+  font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  padding: 0.75rem 2rem;
-  border: 1px solid rgba(239,231,212,0.4);
+  padding: 0.875rem 2rem;
+  border: 1px solid rgba(244,239,229,0.35);
   cursor: pointer;
   transition: background 0.15s;
   display: inline-block;
-  font-size: 0.9rem;
+  text-decoration: none;
 }
 
-.gx-btn-ghost:hover {
-  background: rgba(239,231,212,0.1);
-}
+.gx-btn-ghost:hover { background: rgba(244,239,229,0.08); }

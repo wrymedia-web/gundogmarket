@@ -1,25 +1,24 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Cormorant_SC, EB_Garamond } from "next/font/google";
+import { Montserrat, Cormorant_Garamond, Cormorant_SC } from "next/font/google";
 import "./globals.css";
+
+const montserrat = Montserrat({
+  variable: "--font-montserrat",
+  subsets: ["latin"],
+  weight: ["700", "800", "900"],
+});
 
 const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["400", "500"],
   style: ["normal", "italic"],
 });
 
 const cormorantSC = Cormorant_SC({
   variable: "--font-cormorant-sc",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-});
-
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  style: ["normal", "italic"],
+  weight: ["500", "600"],
 });
 
 export const metadata: Metadata = {
@@ -40,7 +39,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${cormorant.variable} ${cormorantSC.variable} ${ebGaramond.variable} h-full antialiased`}
+      className={`${montserrat.variable} ${cormorant.variable} ${cormorantSC.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
