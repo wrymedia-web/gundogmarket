@@ -5,12 +5,23 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-const montserrat: React.CSSProperties = {
-  fontFamily: "'Montserrat', var(--font-montserrat), system-ui, sans-serif",
+const SC: React.CSSProperties = {
+  fontFamily: "var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif",
+  fontWeight: 500,
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  fontStyle: 'normal',
 }
 
-const inter: React.CSSProperties = {
-  fontFamily: "'Inter', var(--font-inter), system-ui, sans-serif",
+const serif: React.CSSProperties = {
+  fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+  fontStyle: 'italic',
+  fontWeight: 500,
+}
+
+const body: React.CSSProperties = {
+  fontFamily: "var(--font-eb-garamond), 'EB Garamond', Georgia, serif",
+  fontWeight: 400,
 }
 
 function LoginForm() {
@@ -45,135 +56,67 @@ function LoginForm() {
 
   return (
     <div className="min-h-screen flex">
-      {/* Left panel — Ink black */}
-      <div
-        className="hidden lg:flex flex-col justify-between w-[45%] p-12"
-        style={{ background: '#0E0E0E' }}
-      >
+      {/* Left panel — Field Deep */}
+      <div className="hidden lg:flex flex-col justify-between w-[45%] p-12" style={{ background: '#1C2418' }}>
         <div>
-          <Link href="/" className="flex items-center gap-1">
-            <span className="text-xl font-black" style={{ ...montserrat, color: '#D4600A' }}>GUNDOG</span>
-            <span className="text-xl font-black" style={{ ...montserrat, color: '#F4EFE5' }}>MARKET</span>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <span style={{ ...serif, fontSize: 28, color: '#EFE7D4' }}>GunDog</span>
+            <span style={{ ...SC, fontSize: 14, color: '#8B6A2E', display: 'block', marginTop: 2 }}>Exchange</span>
           </Link>
         </div>
         <div>
-          <h2
-            className="text-4xl font-black text-white uppercase leading-none mb-4"
-            style={{ ...montserrat, letterSpacing: '-0.02em' }}
-          >
-            BUY DOGS.<br />
-            SELL DOGS.<br />
-            <span style={{ color: '#D4600A' }}>GET HUNTING.</span>
+          <div style={{ width: 40, height: 1, background: '#B8893F', opacity: 0.6, marginBottom: 24 }} />
+          <h2 style={{ ...serif, fontSize: 52, color: '#EFE7D4', lineHeight: 1, marginBottom: 16 }}>
+            Buy dogs.<br />Sell dogs.<br />Get hunting.
           </h2>
-          <p className="text-sm" style={{ color: 'rgba(244,239,229,0.5)', ...inter }}>
+          <p style={{ ...body, fontSize: 17, color: 'rgba(239,231,212,0.5)', lineHeight: 1.6 }}>
             The marketplace for working bird dogs.
           </p>
         </div>
-        <div
-          className="text-xs uppercase tracking-widest"
-          style={{ color: 'rgba(244,239,229,0.25)', ...inter }}
-        >
-          GunDog Market © 2026
-        </div>
+        <div style={{ ...SC, fontSize: 9, color: 'rgba(239,231,212,0.25)' }}>GunDog Exchange © 2026</div>
       </div>
 
       {/* Right panel — Bone */}
-      <div
-        className="flex-1 flex items-center justify-center px-8 py-12"
-        style={{ background: '#F4EFE5' }}
-      >
+      <div className="flex-1 flex items-center justify-center px-8 py-12" style={{ background: '#EFE7D4' }}>
         <div className="w-full max-w-sm">
-          {/* Mobile logo */}
           <div className="lg:hidden mb-8">
-            <Link href="/" className="flex items-center gap-1">
-              <span className="text-xl font-black" style={{ ...montserrat, color: '#D4600A' }}>GUNDOG</span>
-              <span className="text-xl font-black" style={{ ...montserrat, color: '#0E0E0E' }}>MARKET</span>
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <span style={{ ...serif, fontSize: 26, color: '#1C2418' }}>GunDog</span>
+              <span style={{ ...SC, fontSize: 12, color: '#8B6A2E', display: 'block' }}>Exchange</span>
             </Link>
           </div>
 
-          <h1
-            className="text-2xl font-black uppercase mb-1"
-            style={{ ...montserrat, color: '#0E0E0E' }}
-          >
-            Welcome Back
-          </h1>
-          <p className="text-sm mb-8" style={{ color: '#7C7A6E', ...inter }}>
-            Sign in to your seller dashboard
-          </p>
+          <h1 style={{ ...serif, fontSize: 36, color: '#1C2418', marginBottom: 6 }}>Welcome back.</h1>
+          <p style={{ ...body, fontSize: 16, color: 'rgba(28,36,24,0.55)', marginBottom: 28 }}>Sign in to your account</p>
 
           {(error || errorParam) && (
-            <div
-              className="mb-5 px-4 py-3 text-sm font-medium"
-              style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', ...inter }}
-            >
+            <div className="mb-5 px-4 py-3" style={{ background: 'rgba(107,32,24,0.08)', border: '1px solid rgba(107,32,24,0.25)', ...body, fontSize: 15, color: '#6B2018' }}>
               {error || 'Authentication failed. Please try again.'}
             </div>
           )}
           {messageParam && (
-            <div
-              className="mb-5 px-4 py-3 text-sm font-medium"
-              style={{ background: '#dcfce7', border: '1px solid #86efac', color: '#166534', ...inter }}
-            >
+            <div className="mb-5 px-4 py-3" style={{ background: 'rgba(45,58,42,0.08)', border: '1px solid rgba(45,58,42,0.25)', ...body, fontSize: 15, color: '#2D3A2A' }}>
               {messageParam}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-5">
             <div>
-              <label
-                className="block text-xs font-bold mb-1.5 uppercase tracking-wider"
-                style={{ color: '#0E0E0E', ...inter }}
-              >
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="hunter@example.com"
-                required
-                className="w-full px-4 py-3 text-sm outline-none"
-                style={{ border: '1px solid #D9C8A6', background: 'white', color: '#0E0E0E', ...inter }}
-              />
+              <label style={{ ...SC, fontSize: 9, color: '#8B6A2E', display: 'block', marginBottom: 6 }}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hunter@example.com" required className="w-full px-4 py-3 outline-none" style={{ border: '1px solid rgba(184,137,63,0.3)', background: '#F6F0E1', color: '#1C2418', ...body, fontSize: 16 }} />
             </div>
             <div>
-              <label
-                className="block text-xs font-bold mb-1.5 uppercase tracking-wider"
-                style={{ color: '#0E0E0E', ...inter }}
-              >
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="w-full px-4 py-3 text-sm outline-none"
-                style={{ border: '1px solid #D9C8A6', background: 'white', color: '#0E0E0E', ...inter }}
-              />
+              <label style={{ ...SC, fontSize: 9, color: '#8B6A2E', display: 'block', marginBottom: 6 }}>Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required className="w-full px-4 py-3 outline-none" style={{ border: '1px solid rgba(184,137,63,0.3)', background: '#F6F0E1', color: '#1C2418', ...body, fontSize: 16 }} />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 text-sm font-bold text-white uppercase tracking-widest disabled:opacity-60"
-              style={{
-                background: loading ? '#A84808' : '#D4600A',
-                ...inter,
-                letterSpacing: '0.1em',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                border: 'none',
-              }}
-            >
-              {loading ? 'Signing in...' : 'SIGN IN'}
+            <button type="submit" disabled={loading} className="w-full py-4 disabled:opacity-60" style={{ background: '#2D3A2A', ...SC, fontSize: 10, color: '#EFE7D4', cursor: loading ? 'not-allowed' : 'pointer', border: 'none' }}>
+              {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
 
-          <p className="text-center text-sm mt-6" style={{ color: '#7C7A6E', ...inter }}>
+          <p style={{ ...body, fontSize: 16, color: 'rgba(28,36,24,0.55)', textAlign: 'center', marginTop: 24 }}>
             Don&apos;t have an account?{' '}
-            <Link href="/signup" className="font-bold" style={{ color: '#D4600A' }}>
-              Create account
-            </Link>
+            <Link href="/signup" style={{ color: '#8B6A2E', fontStyle: 'italic' }}>Create account</Link>
           </p>
         </div>
       </div>

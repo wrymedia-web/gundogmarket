@@ -5,12 +5,32 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-const montserrat: React.CSSProperties = {
-  fontFamily: "'Montserrat', var(--font-montserrat), system-ui, sans-serif",
+const SC: React.CSSProperties = {
+  fontFamily: "var(--font-cormorant-sc), 'Cormorant SC', Georgia, serif",
+  fontWeight: 500,
+  letterSpacing: '0.18em',
+  textTransform: 'uppercase',
+  fontStyle: 'normal',
 }
 
-const inter: React.CSSProperties = {
-  fontFamily: "'Inter', var(--font-inter), system-ui, sans-serif",
+const serif: React.CSSProperties = {
+  fontFamily: "var(--font-cormorant), 'Cormorant Garamond', Georgia, serif",
+  fontStyle: 'italic',
+  fontWeight: 500,
+}
+
+const body: React.CSSProperties = {
+  fontFamily: "var(--font-eb-garamond), 'EB Garamond', Georgia, serif",
+  fontWeight: 400,
+}
+
+const fieldInput: React.CSSProperties = {
+  border: '1px solid rgba(184,137,63,0.3)',
+  background: '#F6F0E1',
+  color: '#1C2418',
+  outline: 'none',
+  ...body,
+  fontSize: 16,
 }
 
 export default function SignupPage() {
@@ -49,19 +69,12 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#F4EFE5' }}>
+      <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#EFE7D4' }}>
         <div className="max-w-sm w-full text-center">
-          <div
-            className="w-14 h-14 flex items-center justify-center text-2xl mx-auto mb-6"
-            style={{ background: '#0E0E0E' }}
-          >
-            ✉️
-          </div>
-          <h1 className="text-2xl font-black uppercase mb-3" style={{ ...montserrat, color: '#0E0E0E' }}>
-            Check Your Email
-          </h1>
-          <p className="text-sm" style={{ color: '#7C7A6E', ...inter }}>
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+          <div style={{ width: 56, height: 56, background: '#1C2418', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 24px' }}>✉️</div>
+          <h1 style={{ ...serif, fontSize: 32, color: '#1C2418', marginBottom: 12 }}>Check Your Email</h1>
+          <p style={{ ...body, fontSize: 16, color: 'rgba(28,36,24,0.6)', lineHeight: 1.6 }}>
+            We sent a confirmation link to <em>{email}</em>. Click it to activate your account.
           </p>
         </div>
       </div>
@@ -71,125 +84,65 @@ export default function SignupPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left panel */}
-      <div
-        className="hidden lg:flex flex-col justify-between w-[45%] p-12"
-        style={{ background: '#0E0E0E' }}
-      >
+      <div className="hidden lg:flex flex-col justify-between w-[45%] p-12" style={{ background: '#1C2418' }}>
         <div>
-          <Link href="/" className="flex items-center gap-1">
-            <span className="text-xl font-black" style={{ ...montserrat, color: '#D4600A' }}>GUNDOG</span>
-            <span className="text-xl font-black" style={{ ...montserrat, color: '#F4EFE5' }}>MARKET</span>
+          <Link href="/" style={{ textDecoration: 'none' }}>
+            <span style={{ ...serif, fontSize: 28, color: '#EFE7D4' }}>GunDog</span>
+            <span style={{ ...SC, fontSize: 14, color: '#8B6A2E', display: 'block', marginTop: 2 }}>Exchange</span>
           </Link>
         </div>
         <div>
-          <h2
-            className="text-4xl font-black text-white uppercase leading-none mb-4"
-            style={{ ...montserrat, letterSpacing: '-0.02em' }}
-          >
-            LIST YOUR DOG.<br />
-            REACH THOUSANDS.<br />
-            <span style={{ color: '#D4600A' }}>FOR FREE.</span>
+          <div style={{ width: 40, height: 1, background: '#B8893F', opacity: 0.6, marginBottom: 24 }} />
+          <h2 style={{ ...serif, fontSize: 52, color: '#EFE7D4', lineHeight: 1, marginBottom: 16 }}>
+            List your dog.<br />Reach thousands.<br />For free.
           </h2>
-          <p className="text-sm" style={{ color: 'rgba(244,239,229,0.5)', ...inter }}>
+          <p style={{ ...body, fontSize: 17, color: 'rgba(239,231,212,0.5)', lineHeight: 1.6 }}>
             Free listing · Verified seller badge · Secure payment.
           </p>
         </div>
-        <div className="text-xs uppercase tracking-widest" style={{ color: 'rgba(244,239,229,0.25)', ...inter }}>
-          GunDog Market © 2026
-        </div>
+        <div style={{ ...SC, fontSize: 9, color: 'rgba(239,231,212,0.25)' }}>GunDog Exchange © 2026</div>
       </div>
 
       {/* Right panel */}
-      <div className="flex-1 flex items-center justify-center px-8 py-12" style={{ background: '#F4EFE5' }}>
+      <div className="flex-1 flex items-center justify-center px-8 py-12" style={{ background: '#EFE7D4' }}>
         <div className="w-full max-w-sm">
           <div className="lg:hidden mb-8">
-            <Link href="/" className="flex items-center gap-1">
-              <span className="text-xl font-black" style={{ ...montserrat, color: '#D4600A' }}>GUNDOG</span>
-              <span className="text-xl font-black" style={{ ...montserrat, color: '#0E0E0E' }}>MARKET</span>
+            <Link href="/" style={{ textDecoration: 'none' }}>
+              <span style={{ ...serif, fontSize: 26, color: '#1C2418' }}>GunDog</span>
+              <span style={{ ...SC, fontSize: 12, color: '#8B6A2E', display: 'block' }}>Exchange</span>
             </Link>
           </div>
 
-          <h1 className="text-2xl font-black uppercase mb-1" style={{ ...montserrat, color: '#0E0E0E' }}>
-            Create Account
-          </h1>
-          <p className="text-sm mb-8" style={{ color: '#7C7A6E', ...inter }}>
-            Start selling dogs or save your favorites
-          </p>
+          <h1 style={{ ...serif, fontSize: 36, color: '#1C2418', marginBottom: 6 }}>Create your account.</h1>
+          <p style={{ ...body, fontSize: 16, color: 'rgba(28,36,24,0.55)', marginBottom: 28 }}>Start selling dogs or save your favorites</p>
 
           {error && (
-            <div
-              className="mb-5 px-4 py-3 text-sm font-medium"
-              style={{ background: '#fee2e2', border: '1px solid #fca5a5', color: '#991b1b', ...inter }}
-            >
+            <div className="mb-5 px-4 py-3" style={{ background: 'rgba(107,32,24,0.08)', border: '1px solid rgba(107,32,24,0.25)', ...body, fontSize: 15, color: '#6B2018' }}>
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSignup} className="space-y-4">
+          <form onSubmit={handleSignup} className="space-y-5">
             <div>
-              <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: '#0E0E0E', ...inter }}>
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="John Smith"
-                required
-                className="w-full px-4 py-3 text-sm outline-none"
-                style={{ border: '1px solid #D9C8A6', background: 'white', color: '#0E0E0E', ...inter }}
-              />
+              <label style={{ ...SC, fontSize: 9, color: '#8B6A2E', display: 'block', marginBottom: 6 }}>Full Name</label>
+              <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="John Smith" required className="w-full px-4 py-3 outline-none" style={fieldInput} />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: '#0E0E0E', ...inter }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="hunter@example.com"
-                required
-                className="w-full px-4 py-3 text-sm outline-none"
-                style={{ border: '1px solid #D9C8A6', background: 'white', color: '#0E0E0E', ...inter }}
-              />
+              <label style={{ ...SC, fontSize: 9, color: '#8B6A2E', display: 'block', marginBottom: 6 }}>Email</label>
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="hunter@example.com" required className="w-full px-4 py-3 outline-none" style={fieldInput} />
             </div>
             <div>
-              <label className="block text-xs font-bold mb-1.5 uppercase tracking-wider" style={{ color: '#0E0E0E', ...inter }}>
-                Password
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                minLength={6}
-                className="w-full px-4 py-3 text-sm outline-none"
-                style={{ border: '1px solid #D9C8A6', background: 'white', color: '#0E0E0E', ...inter }}
-              />
+              <label style={{ ...SC, fontSize: 9, color: '#8B6A2E', display: 'block', marginBottom: 6 }}>Password</label>
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="w-full px-4 py-3 outline-none" style={fieldInput} />
             </div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 text-sm font-bold text-white uppercase tracking-widest disabled:opacity-60"
-              style={{
-                background: loading ? '#A84808' : '#D4600A',
-                ...inter,
-                letterSpacing: '0.1em',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                border: 'none',
-              }}
-            >
-              {loading ? 'Creating account...' : 'CREATE ACCOUNT'}
+            <button type="submit" disabled={loading} className="w-full py-4 disabled:opacity-60" style={{ background: '#2D3A2A', ...SC, fontSize: 10, color: '#EFE7D4', cursor: loading ? 'not-allowed' : 'pointer', border: 'none' }}>
+              {loading ? 'Creating account...' : 'Create Account'}
             </button>
           </form>
 
-          <p className="text-center text-sm mt-6" style={{ color: '#7C7A6E', ...inter }}>
+          <p style={{ ...body, fontSize: 16, color: 'rgba(28,36,24,0.55)', textAlign: 'center', marginTop: 24 }}>
             Already have an account?{' '}
-            <Link href="/login" className="font-bold" style={{ color: '#D4600A' }}>
-              Sign in
-            </Link>
+            <Link href="/login" style={{ color: '#8B6A2E', fontStyle: 'italic' }}>Sign in</Link>
           </p>
         </div>
       </div>
