@@ -205,6 +205,25 @@ export default function SellPage() {
         router.push('/login')
         return
       }
+      // Look up plan + count active listings to enforce tier cap
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_tier, subscription_status')
+        .eq('id', user.id)
+        .maybeSingle()
+      const isPro = profile?.subscription_tier === 'pro' && profile?.subscription_status === 'active'
+      const cap = isPro ? 5 : 1
+      const { count: activeCount } = await supabase
+        .from('dogs')
+        .select('id', { count: 'exact', head: true })
+        .eq('seller_id', user.id)
+        .eq('status', 'active')
+      if ((activeCount ?? 0) >= cap) {
+        setError(isPro
+          ? `You've hit the Pro plan cap of ${cap} active listings. Mark one sold or contact support to increase.`
+          : `Free plan allows 1 active listing. Upgrade to Pro for up to 5. Head to /upgrade.`)
+        return
+      }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
       const ageMonths = form.age_months ? parseInt(form.age_months, 10) : null
       const title = form.name ? `${form.name} — ${form.breed}` : form.breed
@@ -224,6 +243,7 @@ export default function SellPage() {
         images: form.images,
         video_url: form.video_url || null,
         status: 'active',
+        featured: isPro,
       })
       if (insertErr) {
         setError(`Publish failed: ${insertErr.message}`)
