@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Navbar from '@/components/navbar'
 import { createClient } from '@/lib/supabase/client'
@@ -25,6 +25,14 @@ const PERKS = [
 ]
 
 export default function UpgradePage() {
+  return (
+    <Suspense fallback={<div style={{ background: '#EFE7D4', minHeight: '100vh' }}><Navbar /></div>}>
+      <UpgradePageInner />
+    </Suspense>
+  )
+}
+
+function UpgradePageInner() {
   const router = useRouter()
   const params = useSearchParams()
   const supabase = createClient()
