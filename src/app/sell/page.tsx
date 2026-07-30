@@ -61,6 +61,20 @@ const HUNT_TITLE_OPTIONS = [
   'AKC Amateur Field Champion',
 ]
 
+const REGISTRATION_OPTIONS = [
+  'AKC Registered — Full',
+  'AKC Registered — Limited',
+  'UKC Registered',
+  'FDSB Registered',
+  'CKC Registered',
+  'NAVHDA Registered',
+  'GSPCA Registered',
+  'ABC (American Brittany Club) Registered',
+  'ARC (American Retriever Club) Registered',
+  'Papers Pending',
+  'Sire/Dam Both Registered',
+]
+
 interface FormData {
   breed: string
   name: string
@@ -70,7 +84,11 @@ interface FormData {
   price: string
   description: string
   health_certs: string[]
+  health_cert_other: string
   hunt_titles: string[]
+  hunt_title_other: string
+  registrations: string[]
+  registration_other: string
   location_state: string
   location_city: string
   video_url: string
@@ -86,7 +104,11 @@ const defaultForm: FormData = {
   price: '',
   description: '',
   health_certs: [],
+  health_cert_other: '',
   hunt_titles: [],
+  hunt_title_other: '',
+  registrations: [],
+  registration_other: '',
   location_state: '',
   location_city: '',
   video_url: '',
@@ -238,8 +260,9 @@ export default function SellPage() {
         location_state: form.location_state || null,
         location_city: form.location_city || null,
         description: form.description || null,
-        health_certs: form.health_certs,
-        hunt_titles: form.hunt_titles,
+        health_certs: [...form.health_certs, ...splitOther(form.health_cert_other)],
+        hunt_titles: [...form.hunt_titles, ...splitOther(form.hunt_title_other)],
+        registrations: [...form.registrations, ...splitOther(form.registration_other)],
         images: form.images,
         video_url: form.video_url || null,
         status: 'active',
@@ -255,7 +278,7 @@ export default function SellPage() {
     }
   }
 
-  function toggleCheck(key: 'health_certs' | 'hunt_titles', val: string) {
+  function toggleCheck(key: 'health_certs' | 'hunt_titles' | 'registrations', val: string) {
     setForm((prev) => {
       const arr = prev[key] as string[]
       return {
@@ -263,6 +286,11 @@ export default function SellPage() {
         [key]: arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val],
       }
     })
+  }
+
+  // Split comma-separated "other" field into array of trimmed non-empty strings
+  function splitOther(raw: string): string[] {
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)
   }
 
   if (published) {
@@ -396,7 +424,23 @@ export default function SellPage() {
                 />
               </div>
               <div>
-                <InputLabel>Health Certifications</InputLabel>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Paperwork & Registrations</h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+                  {REGISTRATION_OPTIONS.map((reg) => (
+                    <label key={reg} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ border: `1px solid ${form.registrations.includes(reg) ? '#D85A1C' : '#D9C8A6'}`, background: form.registrations.includes(reg) ? '#FEF3C7' : 'white' }}>
+                      <input type="checkbox" checked={form.registrations.includes(reg)} onChange={() => toggleCheck('registrations', reg)} style={{ accentColor: '#D85A1C' }} />
+                      <span style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#0F0F0E' }}>{reg}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <InputLabel>Other registrations</InputLabel>
+                  <FieldInput value={form.registration_other} onChange={(v) => update('registration_other', v)} placeholder="e.g. PHR Registered, custom kennel club (separate multiple with commas)" />
+                </div>
+              </div>
+
+              <div>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Health Certifications</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {HEALTH_CERT_OPTIONS.map((cert) => (
                     <label key={cert} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ border: `1px solid ${form.health_certs.includes(cert) ? '#D85A1C' : '#D9C8A6'}`, background: form.health_certs.includes(cert) ? '#FEF3C7' : 'white' }}>
@@ -405,9 +449,14 @@ export default function SellPage() {
                     </label>
                   ))}
                 </div>
+                <div className="mt-3">
+                  <InputLabel>Other health certifications</InputLabel>
+                  <FieldInput value={form.health_cert_other} onChange={(v) => update('health_cert_other', v)} placeholder="e.g. BAER Hearing - Normal, custom health screen (separate multiple with commas)" />
+                </div>
               </div>
+
               <div>
-                <InputLabel>Hunt Titles</InputLabel>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Hunt Titles</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {HUNT_TITLE_OPTIONS.map((title) => (
                     <label key={title} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ border: `1px solid ${form.hunt_titles.includes(title) ? '#D85A1C' : '#D9C8A6'}`, background: form.hunt_titles.includes(title) ? '#FEF3C7' : 'white' }}>
@@ -415,6 +464,10 @@ export default function SellPage() {
                       <span style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#0F0F0E' }}>{title}</span>
                     </label>
                   ))}
+                </div>
+                <div className="mt-3">
+                  <InputLabel>Other hunt titles</InputLabel>
+                  <FieldInput value={form.hunt_title_other} onChange={(v) => update('hunt_title_other', v)} placeholder="e.g. UKC HR, custom trial placement (separate multiple with commas)" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -504,8 +557,9 @@ export default function SellPage() {
                   { label: 'Training Level', value: form.training_level || '—' },
                   { label: 'Price', value: form.price ? `$${parseInt(form.price).toLocaleString()}` : '—' },
                   { label: 'Location', value: [form.location_city, form.location_state].filter(Boolean).join(', ') || '—' },
-                  { label: 'Health Certs', value: form.health_certs.length > 0 ? form.health_certs.join(', ') : 'None selected' },
-                  { label: 'Hunt Titles', value: form.hunt_titles.length > 0 ? form.hunt_titles.join(', ') : 'None selected' },
+                  { label: 'Paperwork', value: [...form.registrations, ...splitOther(form.registration_other)].join(', ') || 'None' },
+                  { label: 'Health Certs', value: [...form.health_certs, ...splitOther(form.health_cert_other)].join(', ') || 'None' },
+                  { label: 'Hunt Titles', value: [...form.hunt_titles, ...splitOther(form.hunt_title_other)].join(', ') || 'None' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex gap-4 py-3" style={{ borderBottom: '1px solid #EFE7D4' }}>
                     <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', width: 120, flexShrink: 0 }}>{label}</span>
