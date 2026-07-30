@@ -134,7 +134,7 @@ export default function BrowsePage() {
       if (maxPrice && dog.price > parseInt(maxPrice) * 100) return false
       return true
     })
-  }, [search, activePill, stateFilter, genderFilter, minPrice, maxPrice])
+  }, [dogs, search, activePill, stateFilter, genderFilter, minPrice, maxPrice])
 
   const hasActiveFilters = search || activePill !== 'ALL' || stateFilter || genderFilter || minPrice || maxPrice
 
