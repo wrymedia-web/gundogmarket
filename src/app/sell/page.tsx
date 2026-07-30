@@ -9,6 +9,9 @@ import { CheckCircle, X } from 'lucide-react'
 
 const MAX_PHOTOS = 10
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
+const MAX_DOCS = 10
+const MAX_DOC_BYTES = 10 * 1024 * 1024
+const DOC_MIME_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp']
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -94,6 +97,8 @@ interface FormData {
   location_city: string
   video_url: string
   images: string[]
+  documents: { name: string; url: string }[]
+  pedigree_url: string
 }
 
 const defaultForm: FormData = {
@@ -114,6 +119,8 @@ const defaultForm: FormData = {
   location_city: '',
   video_url: '',
   images: [],
+  documents: [],
+  pedigree_url: '',
 }
 
 const fieldStyle: React.CSSProperties = {
@@ -163,6 +170,8 @@ export default function SellPage() {
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const docInputRef = useRef<HTMLInputElement>(null)
+  const pedigreeInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
@@ -218,6 +227,74 @@ export default function SellPage() {
     setForm((prev) => ({ ...prev, images: prev.images.filter((u) => u !== url) }))
   }
 
+  async function uploadOne(
+    file: File,
+    bucket: 'dog-photos' | 'dog-documents',
+    userId: string,
+  ): Promise<string | null> {
+    const ext = file.name.split('.').pop() || 'bin'
+    const path = `${userId}/${crypto.randomUUID()}.${ext}`
+    const { error: upErr } = await supabase.storage
+      .from(bucket)
+      .upload(path, file, { cacheControl: '3600', upsert: false, contentType: file.type })
+    if (upErr) {
+      setError(`Upload failed: ${upErr.message}`)
+      return null
+    }
+    const { data: pub } = supabase.storage.from(bucket).getPublicUrl(path)
+    return pub.publicUrl
+  }
+
+  async function handleDocs(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setError(null)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('You must be logged in to upload paperwork.'); return }
+    const slotsLeft = MAX_DOCS - form.documents.length
+    const incoming = Array.from(files).slice(0, slotsLeft)
+    if (files.length > slotsLeft) setError(`Only ${slotsLeft} paperwork slot${slotsLeft === 1 ? '' : 's'} left (10 max).`)
+    setUploading(true)
+    try {
+      const uploaded: { name: string; url: string }[] = []
+      for (const file of incoming) {
+        if (file.size > MAX_DOC_BYTES) { setError(`"${file.name}" is over 10 MB — skipped.`); continue }
+        if (!DOC_MIME_TYPES.includes(file.type)) { setError(`"${file.name}" must be PDF, JPG, PNG, or WEBP — skipped.`); continue }
+        const url = await uploadOne(file, 'dog-documents', user.id)
+        if (url) uploaded.push({ name: file.name, url })
+      }
+      setForm((prev) => ({ ...prev, documents: [...prev.documents, ...uploaded] }))
+    } finally {
+      setUploading(false)
+      if (docInputRef.current) docInputRef.current.value = ''
+    }
+  }
+
+  function removeDoc(url: string) {
+    setForm((prev) => ({ ...prev, documents: prev.documents.filter((d) => d.url !== url) }))
+  }
+
+  async function handlePedigree(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setError(null)
+    const file = files[0]
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('You must be logged in to upload a pedigree.'); return }
+    if (file.size > MAX_DOC_BYTES) { setError(`Pedigree file is over 10 MB.`); return }
+    if (!DOC_MIME_TYPES.includes(file.type)) { setError(`Pedigree must be PDF, JPG, PNG, or WEBP.`); return }
+    setUploading(true)
+    try {
+      const url = await uploadOne(file, 'dog-documents', user.id)
+      if (url) setForm((prev) => ({ ...prev, pedigree_url: url }))
+    } finally {
+      setUploading(false)
+      if (pedigreeInputRef.current) pedigreeInputRef.current.value = ''
+    }
+  }
+
+  function removePedigree() {
+    setForm((prev) => ({ ...prev, pedigree_url: '' }))
+  }
+
   async function handlePublish() {
     setError(null)
     setPublishing(true)
@@ -265,6 +342,8 @@ export default function SellPage() {
         hunt_titles: [...form.hunt_titles, ...splitOther(form.hunt_title_other)],
         registrations: [...form.registrations, ...splitOther(form.registration_other)],
         images: form.images,
+        documents: form.documents,
+        pedigree_url: form.pedigree_url || null,
         video_url: form.video_url || null,
         status: 'active',
         featured: isPro,
@@ -544,6 +623,105 @@ export default function SellPage() {
                 <FieldInput value={form.video_url} onChange={(v) => update('video_url', v)} placeholder="https://youtube.com/watch?v=..." />
                 <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginTop: 6 }}>YouTube, Vimeo, or any video link showing the dog in action</p>
               </div>
+
+              <div>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Paperwork</h3>
+                <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginBottom: 12 }}>
+                  Upload scanned or photographed papers: AKC/UKC registration, health cert docs, vet records, etc. Buyers see these on the listing to verify what you claim above.
+                </p>
+                <input
+                  ref={docInputRef}
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  multiple
+                  onChange={(e) => handleDocs(e.target.files)}
+                  style={{ display: 'none' }}
+                />
+                <div
+                  onClick={() => !uploading && form.documents.length < MAX_DOCS && docInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault() }}
+                  onDrop={(e) => { e.preventDefault(); if (!uploading) handleDocs(e.dataTransfer.files) }}
+                  className="flex flex-col items-center justify-center py-12"
+                  style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading || form.documents.length >= MAX_DOCS ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+                >
+                  <div style={{ fontSize: 32, opacity: 0.25, marginBottom: 10 }}>📄</div>
+                  <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#0F0F0E', marginBottom: 4 }}>
+                    {uploading ? 'Uploading…' : form.documents.length >= MAX_DOCS ? 'Paperwork limit reached' : 'Drop paperwork here or click to upload'}
+                  </p>
+                  <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E' }}>
+                    Up to {MAX_DOCS} files · PDF, JPG, PNG, WEBP · Max 10MB each · {form.documents.length}/{MAX_DOCS} added
+                  </p>
+                </div>
+                {form.documents.length > 0 && (
+                  <ul style={{ listStyle: 'none', padding: 0, marginTop: 12 }}>
+                    {form.documents.map((doc) => (
+                      <li key={doc.url} className="flex items-center gap-3 px-4 py-3" style={{ border: '1px solid #D9C8A6', background: 'white', marginBottom: 6 }}>
+                        <span style={{ fontSize: 18 }}>📄</span>
+                        <a href={doc.url} target="_blank" rel="noopener" style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#0F0F0E', textDecoration: 'underline', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{doc.name}</a>
+                        <button
+                          type="button"
+                          onClick={() => removeDoc(doc.url)}
+                          aria-label="Remove paperwork"
+                          style={{ background: 'transparent', color: '#7C7A6E', border: 'none', cursor: 'pointer', padding: 4 }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Pedigree</h3>
+                <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginBottom: 12 }}>
+                  Upload the dog's pedigree chart (5-generation is standard). A clean pedigree is often the single most valued document for serious buyers.
+                </p>
+                <input
+                  ref={pedigreeInputRef}
+                  type="file"
+                  accept="application/pdf,image/jpeg,image/png,image/webp"
+                  onChange={(e) => handlePedigree(e.target.files)}
+                  style={{ display: 'none' }}
+                />
+                {form.pedigree_url ? (
+                  <div className="flex items-center gap-3 px-4 py-4" style={{ border: '1px solid #D85A1C', background: '#FEF3C7' }}>
+                    <span style={{ fontSize: 22 }}>🐕</span>
+                    <a href={form.pedigree_url} target="_blank" rel="noopener" style={{ ...sans, fontWeight: 700, fontSize: 14, color: '#0F0F0E', textDecoration: 'underline', flex: 1 }}>Pedigree uploaded — view</a>
+                    <button
+                      type="button"
+                      onClick={() => pedigreeInputRef.current?.click()}
+                      style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', background: 'transparent', border: '1px solid #D9C8A6', padding: '6px 12px', cursor: 'pointer' }}
+                    >
+                      Replace
+                    </button>
+                    <button
+                      type="button"
+                      onClick={removePedigree}
+                      aria-label="Remove pedigree"
+                      style={{ background: 'transparent', color: '#7C7A6E', border: 'none', cursor: 'pointer', padding: 4 }}
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ) : (
+                  <div
+                    onClick={() => !uploading && pedigreeInputRef.current?.click()}
+                    onDragOver={(e) => { e.preventDefault() }}
+                    onDrop={(e) => { e.preventDefault(); if (!uploading) handlePedigree(e.dataTransfer.files) }}
+                    className="flex flex-col items-center justify-center py-12"
+                    style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+                  >
+                    <div style={{ fontSize: 32, opacity: 0.25, marginBottom: 10 }}>🐕</div>
+                    <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#0F0F0E', marginBottom: 4 }}>
+                      {uploading ? 'Uploading…' : 'Drop pedigree here or click to upload'}
+                    </p>
+                    <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E' }}>
+                      One file · PDF, JPG, PNG, WEBP · Max 10MB
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -558,9 +736,11 @@ export default function SellPage() {
                   { label: 'Training Level', value: form.training_level || '—' },
                   { label: 'Price', value: form.price ? `$${parseInt(form.price).toLocaleString()}` : '—' },
                   { label: 'Location', value: [form.location_city, form.location_state].filter(Boolean).join(', ') || '—' },
-                  { label: 'Paperwork', value: [...form.registrations, ...splitOther(form.registration_other)].join(', ') || 'None' },
+                  { label: 'Registrations', value: [...form.registrations, ...splitOther(form.registration_other)].join(', ') || 'None' },
                   { label: 'Health Certs', value: [...form.health_certs, ...splitOther(form.health_cert_other)].join(', ') || 'None' },
                   { label: 'Hunt Titles', value: [...form.hunt_titles, ...splitOther(form.hunt_title_other)].join(', ') || 'None' },
+                  { label: 'Paperwork Files', value: form.documents.length > 0 ? `${form.documents.length} file${form.documents.length === 1 ? '' : 's'} attached` : 'None' },
+                  { label: 'Pedigree', value: form.pedigree_url ? 'Uploaded' : 'Not uploaded' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex gap-4 py-3" style={{ borderBottom: '1px solid #EFE7D4' }}>
                     <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', width: 120, flexShrink: 0 }}>{label}</span>
