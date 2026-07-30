@@ -31,6 +31,7 @@ const SC: React.CSSProperties = {
 const STEPS = ['Dog Info', 'Details', 'Media', 'Review & Publish']
 
 const HEALTH_CERT_OPTIONS = [
+  'No health testing performed',
   'OFA Hip - Excellent',
   'OFA Hip - Good',
   'OFA Hip - Fair',
