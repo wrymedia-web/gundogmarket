@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import Navbar, { Wordmark } from '@/components/navbar'
+import FeaturedDogs from '@/components/featured-dogs'
 import { ShieldCheck, Trophy, CreditCard } from 'lucide-react'
 
 const display: React.CSSProperties = {
@@ -28,12 +29,6 @@ const SC: React.CSSProperties = {
   textTransform: 'uppercase',
   fontStyle: 'normal',
 }
-
-const featuredDogs = [
-  { img: '/photos/dog-retrieve.jpg', breed: 'German Shorthair', name: 'Buck — Started Upland Male', price: '$3,200', location: 'Kansas', level: 'Started' },
-  { img: '/photos/dog-field-hunters.jpg', breed: 'German Shorthair', name: 'Stella — Finished Bird Dog', price: '$6,500', location: 'Nebraska', level: 'Finished' },
-  { img: '/photos/dog-point.jpg', breed: 'German Shorthair', name: 'Ace — JH Title, Broke to Shot', price: '$4,800', location: 'South Dakota', level: 'Finished' },
-]
 
 const breeds = ['Lab', 'GSP', 'Brittany', 'Vizsla', 'Setter', 'All Breeds']
 
@@ -107,41 +102,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Featured Listings ────────────────────────────── */}
-      <section style={{ background: '#EFE7D4', padding: '80px 24px' }}>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-end justify-between mb-10">
-            <div>
-              <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 8 }}>Selected Listings</div>
-              <h2 style={{ ...display, fontSize: 36, color: '#0F0F0E' }}>Featured Dogs</h2>
-            </div>
-            <Link href="/dogs" style={{ ...sans, fontSize: 12, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', textDecoration: 'none' }}>View All →</Link>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {featuredDogs.map((dog) => (
-              <Link href="/dogs" key={dog.name} className="group block" style={{ textDecoration: 'none' }}>
-                <div style={{ background: 'white', border: '1px solid #D9C8A6', overflow: 'hidden' }}>
-                  <div className="relative" style={{ height: 240 }}>
-                    <Image src={dog.img} alt={dog.name} fill className="object-cover object-center transition-transform duration-500 group-hover:scale-105" />
-                    <div className="absolute top-0 left-0 px-3 py-1.5" style={{ background: '#D85A1C' }}>
-                      <span style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'white' }}>{dog.level}</span>
-                    </div>
-                  </div>
-                  <div style={{ padding: '20px 22px 22px' }}>
-                    <div style={{ ...SC, fontSize: 9, color: '#D85A1C', marginBottom: 6 }}>{dog.breed}</div>
-                    <div style={{ ...sans, fontSize: 14, fontWeight: 800, textTransform: 'uppercase', color: '#0F0F0E', marginBottom: 14, letterSpacing: '-0.01em' }}>{dog.name}</div>
-                    <div style={{ height: 1, background: '#D9C8A6', marginBottom: 14 }} />
-                    <div className="flex items-center justify-between">
-                      <span style={{ ...display, fontSize: 22, color: '#0F0F0E' }}>{dog.price}</span>
-                      <span style={{ ...SC, fontSize: 9, color: '#7C7A6E' }}>{dog.location}</span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
+      <FeaturedDogs />
 
       {/* ── Photo banner ─────────────────────────────────── */}
       <section className="relative overflow-hidden" style={{ height: 400 }}>
