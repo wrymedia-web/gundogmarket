@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Navbar, { Wordmark } from '@/components/navbar'
 import FeaturedDogs from '@/components/featured-dogs'
 import { ShieldCheck, Trophy, CreditCard } from 'lucide-react'
+import { PLANS, PLAN_ORDER } from '@/lib/plans'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -73,7 +74,7 @@ export default function HomePage() {
 
           {/* Stats */}
           <div className="flex items-center gap-6 mt-12 flex-wrap">
-            {['2,400+ Listings', 'Verified Sellers', 'Secure Escrow'].map((s, i) => (
+            {['$0 to List', 'Escrow Protected', 'Hunt-Test Verified'].map((s, i) => (
               <div key={s} className="flex items-center gap-6">
                 {i > 0 && <div style={{ width: 1, height: 18, background: 'rgba(244,239,229,0.15)' }} />}
                 <span style={{ ...sans, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(244,239,229,0.45)' }}>{s}</span>
@@ -172,20 +173,32 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 10 }}>Pricing</div>
             <h2 style={{ ...display, fontSize: 36, color: '#0F0F0E' }}>
-              Sell for Free.<br /><span style={{ color: '#D85A1C' }}>Upgrade for More.</span>
+              Start Free.<br /><span style={{ color: '#D85A1C' }}>Upgrade for More.</span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
-            {[
-              { name: 'Free Listing', price: '$0', period: 'always free', items: ['1 active listing', 'Basic profile', 'Buyer messaging', 'Photo upload'], cta: 'Post a Free Listing', href: '/sell', dark: false },
-              { name: 'Breeder Pro', price: '$29', period: '/month', items: ['Up to 5 active listings', 'Featured on homepage', 'Verified badge', 'Priority support'], cta: 'Upgrade to Pro', href: '/upgrade', dark: true },
-            ].map((plan) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+            {PLAN_ORDER.map((planId) => {
+              const p = PLANS[planId]
+              const plan = {
+                name: p.name,
+                price: p.price,
+                period: p.period,
+                trial: p.trial,
+                items: p.features,
+                cta: p.cta,
+                href: `/upgrade?plan=${p.id}`,
+                dark: p.id === 'pro',
+              }
+              return (
               <div key={plan.name} style={{ background: plan.dark ? '#0F0F0E' : 'white', border: `1px solid ${plan.dark ? '#D85A1C' : '#D9C8A6'}`, padding: '36px', display: 'flex', flexDirection: 'column' }}>
                 {plan.dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 16, alignSelf: 'flex-start' }}>Most Popular</div>}
                 <div style={{ ...display, fontSize: 18, color: plan.dark ? '#EFE7D4' : '#0F0F0E', marginBottom: 4 }}>{plan.name}</div>
-                <div className="flex items-baseline gap-2 mb-6">
+                <div className="flex items-baseline gap-2 mb-2">
                   <span style={{ ...display, fontSize: 48, color: plan.dark ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{plan.price}</span>
                   <span style={{ ...sans, fontSize: 13, color: plan.dark ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{plan.period}</span>
+                </div>
+                <div style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', marginBottom: 20, minHeight: 14 }}>
+                  {plan.trial ?? ''}
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', flex: 1 }}>
                   {plan.items.map((item) => (
@@ -198,7 +211,8 @@ export default function HomePage() {
                   {plan.cta}
                 </Link>
               </div>
-            ))}
+              )
+            })}
           </div>
         </div>
       </section>

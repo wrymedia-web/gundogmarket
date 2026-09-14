@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
+import BreedAlertSignup from '@/components/breed-alert-signup'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -80,10 +81,18 @@ export default function FeaturedDogs() {
         {loading ? (
           <div style={{ ...sans, color: '#7C7A6E', fontSize: 13, textAlign: 'center', padding: 40 }}>Loading listings…</div>
         ) : dogs.length === 0 ? (
-          <div style={{ border: '1px solid #D9C8A6', background: 'white', padding: '48px 24px', textAlign: 'center' }}>
-            <div style={{ ...display, fontSize: 24, color: '#0F0F0E', marginBottom: 10 }}>Be the First to List</div>
-            <p style={{ ...sans, fontSize: 13, color: '#7C7A6E', marginBottom: 20 }}>No dogs are listed yet. Post yours and it lands right here.</p>
-            <Link href="/sell" className="gx-btn">Sell Your Dog</Link>
+          <div className="grid grid-cols-1 md:grid-cols-2" style={{ border: '1px solid #D9C8A6', background: 'white' }}>
+            <div style={{ padding: '52px 40px', borderBottom: '1px solid #D9C8A6' }} className="md:border-b-0 md:border-r md:border-[#D9C8A6]">
+              <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 10 }}>Founding Sellers</div>
+              <div style={{ ...display, fontSize: 28, color: '#0F0F0E', marginBottom: 12 }}>Be the First<br />to List.</div>
+              <p style={{ ...sans, fontSize: 13, fontWeight: 400, color: '#7C7A6E', lineHeight: 1.65, marginBottom: 24 }}>
+                The exchange is open and buyers are watching. List your dog free and take the front page.
+              </p>
+              <Link href="/sell" className="gx-btn">List Your Dog Free</Link>
+            </div>
+            <div style={{ padding: '52px 40px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <BreedAlertSignup variant="light" />
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
