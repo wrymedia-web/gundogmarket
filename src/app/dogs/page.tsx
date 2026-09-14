@@ -2,7 +2,9 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import Navbar from '@/components/navbar'
+import BreedAlertSignup from '@/components/breed-alert-signup'
 import { Search } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import {
@@ -120,7 +122,7 @@ export default function BrowsePage() {
         if (
           !dog.title.toLowerCase().includes(s) &&
           !dog.breed.toLowerCase().includes(s) &&
-          !dog.location_city.toLowerCase().includes(s)
+          !(dog.location_city ?? '').toLowerCase().includes(s)
         ) return false
       }
       if (activePill === 'PUPS' && dog.training_level !== 'puppy') return false
@@ -160,8 +162,11 @@ export default function BrowsePage() {
         </div>
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 mb-8">
           <h1 style={{ ...display, fontSize: 'clamp(38px, 6vw, 68px)', color: BONE }}>
-            {dogs.length.toLocaleString()} Dogs{' '}
-            <span style={{ color: BLAZE }}>Listed.</span>
+            {dogs.length >= 20 ? (
+              <>{dogs.length.toLocaleString()} Dogs <span style={{ color: BLAZE }}>Listed.</span></>
+            ) : (
+              <>Working Dogs, <span style={{ color: BLAZE }}>Listed.</span></>
+            )}
           </h1>
           <p style={{ ...serif, fontSize: 15, color: 'rgba(239,231,212,0.28)', paddingBottom: 6 }}>
             Sorted by week of listing — fresh first
@@ -233,17 +238,99 @@ export default function BrowsePage() {
       {/* Divider + count */}
       <div className="max-w-7xl mx-auto px-6 mb-6">
         <div style={{ height: 1, background: 'rgba(239,231,212,0.06)', marginBottom: 14 }} />
-        <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.25)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-          {filtered.length} result{filtered.length !== 1 ? 's' : ''}
-        </p>
+        {dogs.length >= 20 && (
+          <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.25)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
       {/* Grid */}
       <div className="max-w-7xl mx-auto px-6 pb-20">
-        {filtered.length === 0 ? (
-          <div className="p-16 text-center" style={{ border: '1px solid rgba(239,231,212,0.06)' }}>
-            <p style={{ ...display, fontSize: 24, color: BONE, marginBottom: 8 }}>No Dogs Found</p>
-            <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.35)', fontSize: 15 }}>Try adjusting your filters.</p>
+        {loading ? (
+          <div className="p-16 text-center">
+            <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.35)', fontSize: 13 }}>Loading listings…</p>
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2" style={{ border: '1px solid rgba(239,231,212,0.1)' }}>
+            <div style={{ padding: '56px 44px', borderBottom: '1px solid rgba(239,231,212,0.1)' }} className="md:border-b-0 md:border-r md:border-[rgba(239,231,212,0.1)]">
+              <div style={{ ...SC, fontSize: 10, color: BLAZE, marginBottom: 12 }}>Founding Sellers</div>
+              <p style={{ ...display, fontSize: 30, color: BONE, marginBottom: 14 }}>Be the First —<br />List Your Dog Free.</p>
+              <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.4)', fontSize: 13, lineHeight: 1.65, marginBottom: 24 }}>
+                The exchange is open and buyers are watching. Founding listings take the front page.
+              </p>
+              <Link href="/sell" className="gx-btn">List Your Dog Free</Link>
+              {hasActiveFilters && (
+                <p style={{ ...sans, fontSize: 12, marginTop: 18 }}>
+                  <button
+                    onClick={() => { setSearch(''); setActivePill('ALL'); setStateFilter(''); setGenderFilter(''); setMinPrice(''); setMaxPrice('') }}
+                    style={{ ...sans, fontWeight: 600, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(239,231,212,0.4)', background: 'none', border: 'none', cursor: 'pointer', padding: 0, textDecoration: 'underline' }}
+                  >
+                    Or clear your filters
+                  </button>
+                </p>
+              )}
+            </div>
+            <div style={{ padding: '56px 44px', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <BreedAlertSignup variant="dark" />
+            </div>
+          </div>
+        ) : filtered.length < 12 ? (
+          /* Editorial layout — big feature cards while the exchange is young */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {filtered.map((dog) => {
+              const badgeLabel = [
+                TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel],
+                dog.hunt_titles.length > 0 ? 'Titled' : '',
+              ].filter(Boolean).join(' · ')
+              const heroImg = (dog as unknown as { images?: string[] }).images?.[0]
+
+              return (
+                <Link href={`/dogs/${dog.id}`} key={dog.id} className="group block" style={{ textDecoration: 'none' }}>
+                  <div style={{ background: '#141414', border: '1px solid rgba(239,231,212,0.07)', display: 'flex', flexDirection: 'column' }}>
+                    <div className="relative overflow-hidden" style={{ height: 400, ...(!heroImg ? stripePhoto : {}) }}>
+                      {heroImg ? (
+                        <Image src={heroImg} alt={dog.title} fill className="object-cover object-center transition-transform duration-500 group-hover:scale-105" unoptimized />
+                      ) : (
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(239,231,212,0.12)' }}>Dog Portrait</span>
+                        </div>
+                      )}
+                      <div style={{ position: 'absolute', top: 16, left: 16 }}>
+                        <span style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', background: BLAZE, color: 'white', padding: '6px 14px' }}>
+                          {badgeLabel}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ padding: '28px 28px 26px' }}>
+                      <p style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: BLAZE, marginBottom: 12 }}>
+                        {dog.breed} · {dog.gender === 'male' ? 'Male' : 'Female'} · {formatAge(dog.age_months)}
+                      </p>
+                      <h3 style={{ ...serif, fontSize: 36, color: BONE_SOFT, lineHeight: 1.05, marginBottom: 12 }}>
+                        {dog.title}
+                      </h3>
+                      <p style={{ ...serif, fontWeight: 400, fontSize: 16, color: 'rgba(246,240,225,0.45)', lineHeight: 1.6, marginBottom: 20, display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                        {dog.description}
+                      </p>
+                      <div style={{ height: 1, background: 'rgba(239,231,212,0.07)', marginBottom: 18 }} />
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                        <div>
+                          <p style={{ ...sans, fontWeight: 600, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'rgba(239,231,212,0.3)', marginBottom: 5 }}>
+                            {dog.location_city ? `${dog.location_city}, ` : ''}{dog.location_state}
+                          </p>
+                          <div style={{ ...display, fontSize: 30, color: BONE_SOFT, lineHeight: 1 }}>
+                            {formatPrice(dog.price)}
+                          </div>
+                        </div>
+                        <div style={{ background: BLAZE, padding: '12px 22px', display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                          <span style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'white' }}>Inquire →</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              )
+            })}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
@@ -253,12 +340,17 @@ export default function BrowsePage() {
                 dog.hunt_titles.length > 0 ? 'Titled' : '',
               ].filter(Boolean).join(' · ')
 
+              const heroImg = (dog as unknown as { images?: string[] }).images?.[0]
+
               return (
-                <Link href={`/dogs/${dog.id}`} key={dog.id} className="block" style={{ textDecoration: 'none' }}>
+                <Link href={`/dogs/${dog.id}`} key={dog.id} className="group block" style={{ textDecoration: 'none' }}>
                   <div style={{ background: '#141414', border: '1px solid rgba(239,231,212,0.07)', display: 'flex', flexDirection: 'column' }}>
 
-                    {/* Photo area — diagonal stripe placeholder */}
-                    <div style={{ ...stripePhoto, height: 280, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {/* Photo area */}
+                    <div className="relative overflow-hidden" style={{ height: 280, ...(!heroImg ? stripePhoto : {}), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {heroImg && (
+                        <Image src={heroImg} alt={dog.title} fill className="object-cover object-center transition-transform duration-500 group-hover:scale-105" unoptimized />
+                      )}
                       {/* Training badge — top left */}
                       <div style={{ position: 'absolute', top: 14, left: 14 }}>
                         <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', background: BLAZE, color: 'white', padding: '5px 12px' }}>
@@ -271,10 +363,11 @@ export default function BrowsePage() {
                         <span style={{ ...sans, fontWeight: 700, fontSize: 8, letterSpacing: '0.05em', color: 'rgba(239,231,212,0.35)' }}>GDX</span>
                       </div>
 
-                      {/* Photo placeholder text */}
-                      <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(239,231,212,0.12)' }}>
-                        Dog Portrait
-                      </span>
+                      {!heroImg && (
+                        <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.2em', color: 'rgba(239,231,212,0.12)' }}>
+                          Dog Portrait
+                        </span>
+                      )}
                     </div>
 
                     {/* Card content */}
