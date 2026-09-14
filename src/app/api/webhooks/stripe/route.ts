@@ -35,7 +35,8 @@ export async function POST(req: Request) {
     const userId = (sub.metadata?.supabase_user_id as string) || null
     if (!userId) return
     const status = sub.status
-    const tier = status === 'active' || status === 'trialing' ? 'pro' : 'free'
+    const paidTier = (sub.metadata?.tier as string) || 'pro'
+    const tier = status === 'active' || status === 'trialing' ? paidTier : 'free'
     // Stripe API returns period end as a Unix timestamp on the first item
     const periodEndUnix = (sub.items?.data?.[0] as unknown as { current_period_end?: number })?.current_period_end
     const periodEnd = periodEndUnix ? new Date(periodEndUnix * 1000).toISOString() : null

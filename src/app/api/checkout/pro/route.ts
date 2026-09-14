@@ -1,10 +1,24 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
+import type { PlanId } from '@/lib/plans'
+
+// Price IDs land in env once the Stripe account decision is made.
+const PRICE_ENV: Record<PlanId, string | undefined> = {
+  basic: process.env.STRIPE_PRICE_GDE_BASIC,
+  pro: process.env.STRIPE_PRICE_GDE_PRO,
+  kennel: process.env.STRIPE_PRICE_GDE_KENNEL,
+}
 
 export async function POST(req: Request) {
+  let plan: PlanId = 'pro'
+  try {
+    const body = await req.clone().json()
+    if (body?.plan === 'basic' || body?.plan === 'pro' || body?.plan === 'kennel') plan = body.plan
+  } catch { /* no body → default pro */ }
+
   const secret = process.env.STRIPE_SECRET_KEY
-  const priceId = process.env.STRIPE_PRICE_GDE_PRO
+  const priceId = PRICE_ENV[plan]
   if (!secret || !priceId) {
     return NextResponse.json({ error: 'Stripe not configured yet' }, { status: 503 })
   }
@@ -41,7 +55,10 @@ export async function POST(req: Request) {
     success_url: `${origin}/upgrade/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/upgrade?canceled=1`,
     allow_promotion_codes: true,
-    subscription_data: { metadata: { supabase_user_id: user.id, tier: 'pro' } },
+    subscription_data: {
+      metadata: { supabase_user_id: user.id, tier: plan },
+      ...(plan === 'basic' ? { trial_period_days: 30 } : {}),
+    },
   })
 
   return NextResponse.json({ url: session.url })

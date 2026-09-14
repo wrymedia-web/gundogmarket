@@ -4,6 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar'
 import { ALL_BREEDS, US_STATES } from '@/lib/mock-data'
+import { PLANS, listingCap } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X } from 'lucide-react'
 
@@ -311,17 +312,17 @@ export default function SellPage() {
         .select('subscription_tier, subscription_status')
         .eq('id', user.id)
         .maybeSingle()
-      const isPro = profile?.subscription_tier === 'pro' && profile?.subscription_status === 'active'
-      const cap = isPro ? 5 : 1
+      const subActive = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing'
+      const cap = listingCap(profile?.subscription_tier, subActive)
       const { count: activeCount } = await supabase
         .from('dogs')
         .select('id', { count: 'exact', head: true })
         .eq('seller_id', user.id)
         .eq('status', 'active')
       if ((activeCount ?? 0) >= cap) {
-        setError(isPro
-          ? `You've hit the Pro plan cap of ${cap} active listings. Mark one sold or contact support to increase.`
-          : `Free plan allows 1 active listing. Upgrade to Pro for up to 5. Head to /upgrade.`)
+        setError(profile?.subscription_tier === 'pro' && subActive
+          ? `Breeder Pro allows up to ${PLANS.pro.maxListings} active listings. Mark one sold, or move up to Kennel for unlimited listings at /upgrade.`
+          : `Your plan allows ${cap} active listing${cap === 1 ? '' : 's'}. Upgrade at /upgrade — Breeder Pro gets you ${PLANS.pro.maxListings}, Kennel is unlimited.`)
         return
       }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
@@ -346,7 +347,7 @@ export default function SellPage() {
         pedigree_url: form.pedigree_url || null,
         video_url: form.video_url || null,
         status: 'active',
-        featured: isPro,
+        featured: subActive && (profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'kennel'),
       })
       if (insertErr) {
         setError(`Publish failed: ${insertErr.message}`)
