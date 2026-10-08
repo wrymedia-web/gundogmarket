@@ -261,12 +261,17 @@ export function formatPrice(cents: number): string {
   return `$${(cents / 100).toLocaleString()}`
 }
 
-export function formatAge(months: number): string {
-  if (months < 12) return `${months} mo`
+export function formatAge(totalMonths: number | null | undefined): string {
+  if (totalMonths == null || isNaN(totalMonths) || totalMonths < 0) return '—'
+  const months = Math.floor(totalMonths)
+  if (months === 0) return '0 months'
   const years = Math.floor(months / 12)
   const rem = months % 12
-  if (rem === 0) return `${years} yr`
-  return `${years} yr ${rem} mo`
+  const yearStr = years === 1 ? '1 year' : `${years} years`
+  const monthStr = rem === 1 ? '1 month' : `${rem} months`
+  if (years === 0) return monthStr
+  if (rem === 0) return yearStr
+  return `${yearStr}, ${monthStr}`
 }
 
 export const TRAINING_LEVEL_LABELS: Record<TrainingLevel, string> = {

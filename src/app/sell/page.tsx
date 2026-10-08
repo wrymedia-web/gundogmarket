@@ -3,7 +3,7 @@
 import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar'
-import { ALL_BREEDS, US_STATES } from '@/lib/mock-data'
+import { ALL_BREEDS, US_STATES, formatAge } from '@/lib/mock-data'
 import { PLANS, listingCap } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X } from 'lucide-react'
@@ -83,7 +83,8 @@ const REGISTRATION_OPTIONS = [
 interface FormData {
   breed: string
   name: string
-  age_months: string
+  age_years: string
+  age_months_rem: string
   gender: string
   training_level: string
   price: string
@@ -105,7 +106,8 @@ interface FormData {
 const defaultForm: FormData = {
   breed: '',
   name: '',
-  age_months: '',
+  age_years: '',
+  age_months_rem: '',
   gender: '',
   training_level: '',
   price: '',
@@ -327,7 +329,9 @@ export default function SellPage() {
         return
       }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
-      const ageMonths = form.age_months ? parseInt(form.age_months, 10) : null
+      const ageYears = form.age_years ? parseInt(form.age_years, 10) : 0
+      const ageMonthsRem = form.age_months_rem ? parseInt(form.age_months_rem, 10) : 0
+      const ageMonths = (ageYears || ageMonthsRem) ? (ageYears * 12 + ageMonthsRem) : null
       const title = form.name ? `${form.name} — ${form.breed}` : form.breed
       const { error: insertErr } = await supabase.from('dogs').insert({
         seller_id: user.id,
@@ -453,13 +457,37 @@ export default function SellPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <InputLabel>Age (months) *</InputLabel>
-                  <FieldInput
-                    type="number"
-                    value={form.age_months}
-                    onChange={(v) => update('age_months', v)}
-                    placeholder="e.g. 24"
-                  />
+                  <InputLabel>Age</InputLabel>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <div style={{ fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif", fontWeight: 700, fontSize: 8, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 4 }}>Years</div>
+                      <select
+                        value={form.age_years}
+                        onChange={(e) => update('age_years', e.target.value)}
+                        className="w-full px-3 py-3 outline-none"
+                        style={fieldStyle}
+                      >
+                        <option value="">—</option>
+                        {Array.from({ length: 31 }, (_, i) => (
+                          <option key={i} value={String(i)}>{i}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif", fontWeight: 700, fontSize: 8, textTransform: 'uppercase' as const, letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 4 }}>Months</div>
+                      <select
+                        value={form.age_months_rem}
+                        onChange={(e) => update('age_months_rem', e.target.value)}
+                        className="w-full px-3 py-3 outline-none"
+                        style={fieldStyle}
+                      >
+                        <option value="">—</option>
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <option key={i} value={String(i)}>{i}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
                 </div>
                 <div>
                   <InputLabel>Gender *</InputLabel>
@@ -734,7 +762,7 @@ export default function SellPage() {
               <div className="mb-8">
                 {[
                   { label: 'Breed', value: form.breed },
-                  { label: 'Age', value: form.age_months ? `${form.age_months} months` : '—' },
+                  { label: 'Age', value: (form.age_years || form.age_months_rem) ? formatAge((parseInt(form.age_years || '0', 10) * 12) + parseInt(form.age_months_rem || '0', 10)) : '—' },
                   { label: 'Gender', value: form.gender || '—' },
                   { label: 'Training Level', value: form.training_level || '—' },
                   { label: 'Price', value: form.price ? `$${parseInt(form.price).toLocaleString()}` : '—' },
