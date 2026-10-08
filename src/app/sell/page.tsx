@@ -180,15 +180,35 @@ export default function SellPage() {
 
   // Plan entitlements gate: publishing requires an active plan
   const [ent, setEnt] = useState<Entitlements | null>(null)
+  const [capReached, setCapReached] = useState(false)
+  const [addingSlot, setAddingSlot] = useState(false)
+
+  async function addSlotAndRetry() {
+    setAddingSlot(true)
+    setError(null)
+    try {
+      const res = await fetch('/api/listings/slots', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'add' }),
+      })
+      const json = await res.json()
+      if (!res.ok) { setError(json.error || 'Could not add a slot.'); return }
+      setCapReached(false)
+      await handlePublish()
+    } finally {
+      setAddingSlot(false)
+    }
+  }
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { router.push('/login?redirect=/sell'); return }
       const { data: profile } = await supabase
         .from('profiles')
-        .select('subscription_tier, subscription_status')
+        .select('subscription_tier, subscription_status, extra_listings')
         .eq('id', user.id)
         .maybeSingle()
-      const e = entitlements(profile?.subscription_tier, profile?.subscription_status)
+      const e = entitlements(profile?.subscription_tier, profile?.subscription_status, profile?.extra_listings ?? 0)
       if (!e.canPublish) { router.push('/pricing'); return }
       setEnt(e)
     })
@@ -329,10 +349,10 @@ export default function SellPage() {
       // Server-enforced too (DB trigger); this is the friendly front door
       const { data: profile } = await supabase
         .from('profiles')
-        .select('subscription_tier, subscription_status')
+        .select('subscription_tier, subscription_status, extra_listings')
         .eq('id', user.id)
         .maybeSingle()
-      const e = entitlements(profile?.subscription_tier, profile?.subscription_status)
+      const e = entitlements(profile?.subscription_tier, profile?.subscription_status, profile?.extra_listings ?? 0)
       if (!e.canPublish) { router.push('/pricing'); return }
       const { count: activeCount } = await supabase
         .from('dogs')
@@ -340,9 +360,11 @@ export default function SellPage() {
         .eq('seller_id', user.id)
         .eq('status', 'active')
       if ((activeCount ?? 0) >= e.maxListings) {
-        setError(`Your plan allows ${e.maxListings} active listing${e.maxListings === 1 ? '' : 's'}. Mark one as sold or remove it to publish another.`)
+        setCapReached(true)
+        setError(`Your plan allows ${e.maxListings} active listing${e.maxListings === 1 ? '' : 's'}.`)
         return
       }
+      setCapReached(false)
       if (form.images.length > e.maxPhotos) {
         setError(`Your plan includes ${e.maxPhotos} photo${e.maxPhotos === 1 ? '' : 's'}. Remove ${form.images.length - e.maxPhotos} or upgrade to Featured for up to 10.`)
         return
@@ -378,6 +400,7 @@ export default function SellPage() {
         featured: e.featuredAllowed,
       })
       if (insertErr) {
+        if (/Listing cap reached/i.test(insertErr.message)) setCapReached(true)
         setError(`Publish failed: ${insertErr.message}`)
         return
       }
@@ -819,6 +842,21 @@ export default function SellPage() {
 
               {error && (
                 <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#B03A1F', textAlign: 'center', marginBottom: 12 }}>{error}</p>
+              )}
+              {capReached && (
+                <div className="text-center" style={{ marginBottom: 12 }}>
+                  <button
+                    type="button"
+                    onClick={addSlotAndRetry}
+                    disabled={addingSlot}
+                    style={{ ...sans, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: addingSlot ? '#7C7A6E' : '#0F0F0E', color: 'white', border: 'none', padding: '12px 24px', cursor: addingSlot ? 'wait' : 'pointer' }}
+                  >
+                    {addingSlot ? 'Adding slot…' : 'Add a listing slot — $10/30 days'}
+                  </button>
+                  <p style={{ ...sans, fontSize: 11, color: '#7C7A6E', marginTop: 6 }}>
+                    Billed with your plan (prorated today, then $10 every 30 days). Remove unused slots any time in Settings.
+                  </p>
+                </div>
               )}
               <button
                 onClick={handlePublish}

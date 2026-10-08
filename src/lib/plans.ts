@@ -69,23 +69,28 @@ export type Entitlements = {
  * Legacy tiers: 'pro' (grandfathered 5 listings) and 'free' (grandfathered
  * existing listings stay up, but new publishes require a plan).
  */
-export function entitlements(tier: string | null | undefined, status: string | null | undefined): Entitlements {
-  const active = status === 'active' || status === 'trialing'
+export function entitlements(tier: string | null | undefined, status: string | null | undefined, extraListings = 0): Entitlements {
+  const active = status === 'active' || status === 'trialing' || status === 'past_due' // past_due = grace
   const eff = (tier === 'standard' || tier === 'featured' || tier === 'pro')
     ? (active ? tier : 'free')
     : 'free'
+  const extras = Math.max(0, extraListings)
 
   switch (eff) {
     case 'featured':
-      return { effectiveTier: eff, canPublish: true, maxListings: 1, maxPhotos: 10, videoAllowed: true, featuredAllowed: true }
+      return { effectiveTier: eff, canPublish: true, maxListings: 1 + extras, maxPhotos: 10, videoAllowed: true, featuredAllowed: true }
     case 'standard':
-      return { effectiveTier: eff, canPublish: true, maxListings: 1, maxPhotos: 1, videoAllowed: false, featuredAllowed: false }
+      return { effectiveTier: eff, canPublish: true, maxListings: 1 + extras, maxPhotos: 1, videoAllowed: false, featuredAllowed: false }
     case 'pro': // legacy grandfathered
-      return { effectiveTier: 'pro', canPublish: true, maxListings: 5, maxPhotos: 10, videoAllowed: true, featuredAllowed: true }
+      return { effectiveTier: 'pro', canPublish: true, maxListings: 5 + extras, maxPhotos: 10, videoAllowed: true, featuredAllowed: true }
     default: // free / no subscription — must pick a plan to publish
       return { effectiveTier: 'free', canPublish: false, maxListings: 1, maxPhotos: 10, videoAllowed: true, featuredAllowed: false }
   }
 }
+
+/** Price of one additional active-listing slot, for display. */
+export const EXTRA_LISTING_PRICE = '$10'
+export const EXTRA_LISTING_DISCLOSURE = 'Need to list more than one dog? Add extra listing slots for $10 every 30 days each, billed with your plan.'
 
 /** Legacy helper kept for compatibility with existing call sites. */
 export function listingCap(tier: string | null | undefined): number {

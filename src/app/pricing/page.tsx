@@ -156,7 +156,10 @@ function PricingInner() {
 
         {error && <p style={{ ...sans, fontSize: 13, color: '#B03A1F', textAlign: 'center', marginTop: 20 }}>{error}</p>}
 
-        <p style={{ ...sans, fontSize: 12, color: '#7C7A6E', textAlign: 'center', marginTop: 28, lineHeight: 1.6 }}>
+        <p style={{ ...sans, fontSize: 13, color: '#0F0F0E', textAlign: 'center', marginTop: 24 }}>
+          Need to list more than one dog? Add extra listing slots any time for <strong>$10 every 30 days each</strong>, billed with your plan.
+        </p>
+        <p style={{ ...sans, fontSize: 12, color: '#7C7A6E', textAlign: 'center', marginTop: 16, lineHeight: 1.6 }}>
           By starting a plan you authorize GunDog Exchange to charge your payment method on a recurring 30-day schedule at the listed price until you cancel.
           Cancel any time from Dashboard → Settings → Manage Billing; you keep access until the end of the period you&apos;ve paid for.
           Payments are processed securely by Stripe. See our <a href="/terms" style={{ color: '#D85A1C' }}>Terms</a>.

@@ -11,7 +11,7 @@ export default async function SettingsPage() {
 
   const { data: profile } = await supabase
     .from('profiles')
-    .select('subscription_tier, subscription_status, subscription_current_period_end, subscription_cancel_at, stripe_customer_id')
+    .select('subscription_tier, subscription_status, subscription_current_period_end, subscription_cancel_at, stripe_customer_id, extra_listings')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -23,6 +23,7 @@ export default async function SettingsPage() {
       periodEnd={profile?.subscription_current_period_end ?? null}
       cancelAt={profile?.subscription_cancel_at ?? null}
       hasBilling={!!profile?.stripe_customer_id}
+      extraListings={profile?.extra_listings ?? 0}
     />
   )
 }

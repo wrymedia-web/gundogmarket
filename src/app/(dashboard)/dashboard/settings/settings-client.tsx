@@ -20,10 +20,24 @@ const sectionTitle: React.CSSProperties = {
   ...montserrat, fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#0E0E0E', marginBottom: 12,
 }
 
-export default function SettingsClient({ email, tier, status, periodEnd, cancelAt, hasBilling }: {
+export default function SettingsClient({ email, tier, status, periodEnd, cancelAt, hasBilling, extraListings }: {
   email: string; tier: string; status: string | null
-  periodEnd: string | null; cancelAt: string | null; hasBilling: boolean
+  periodEnd: string | null; cancelAt: string | null; hasBilling: boolean; extraListings: number
 }) {
+  const [slotBusy, setSlotBusy] = useState(false)
+  const [slotMsg, setSlotMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  async function changeSlots(action: 'add' | 'remove') {
+    if (action === 'add' && !window.confirm('Add one extra listing slot for $10 every 30 days (prorated today), billed with your plan?')) return
+    if (action === 'remove' && !window.confirm('Remove one extra slot? Takes effect now; no partial-period credit.')) return
+    setSlotBusy(true); setSlotMsg(null)
+    try {
+      const res = await fetch('/api/listings/slots', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action }) })
+      const json = await res.json()
+      if (!res.ok) { setSlotMsg({ ok: false, text: json.error || 'Could not update slots.' }); return }
+      setSlotMsg({ ok: true, text: action === 'add' ? 'Slot added.' : 'Slot removed.' })
+      setTimeout(() => router.refresh(), 800)
+    } finally { setSlotBusy(false) }
+  }
   const [portalBusy, setPortalBusy] = useState(false)
   const [portalErr, setPortalErr] = useState<string | null>(null)
   async function openPortal() {
@@ -129,6 +143,25 @@ export default function SettingsClient({ email, tier, status, periodEnd, cancelA
                 </p>
               )}
               {portalErr && <p style={{ ...inter, fontSize: 12, color: '#B03A1F', marginTop: 8 }}>{portalErr}</p>}
+              {active && (tier === 'standard' || tier === 'featured') && (
+                <div style={{ borderTop: '1px solid #EAE4D6', marginTop: 16, paddingTop: 14 }}>
+                  <p style={{ ...inter, fontSize: 13, color: '#0E0E0E' }}>
+                    Listing slots: <strong>{1 + extraListings}</strong>
+                    <span style={{ color: '#7C7A6E' }}> (1 included{extraListings > 0 ? ` + ${extraListings} extra at $10/30 days each` : ''})</span>
+                  </p>
+                  <div className="flex gap-2 mt-2 flex-wrap">
+                    <button onClick={() => changeSlots('add')} disabled={slotBusy} style={{ ...inter, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', background: '#0E0E0E', color: 'white', border: 'none', padding: '9px 16px', cursor: slotBusy ? 'wait' : 'pointer' }}>
+                      + Add Slot ($10/30 days)
+                    </button>
+                    {extraListings > 0 && (
+                      <button onClick={() => changeSlots('remove')} disabled={slotBusy} style={{ ...inter, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', background: 'transparent', color: '#B03A1F', border: '1px solid #B03A1F', padding: '9px 16px', cursor: slotBusy ? 'wait' : 'pointer' }}>
+                        − Remove Unused Slot
+                      </button>
+                    )}
+                  </div>
+                  {slotMsg && <p style={{ ...inter, fontSize: 12, color: slotMsg.ok ? '#166534' : '#B03A1F', marginTop: 8 }}>{slotMsg.text}</p>}
+                </div>
+              )}
             </>
           )
         })()}

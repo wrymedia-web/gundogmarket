@@ -37,8 +37,11 @@ export async function POST(req: Request) {
     const userId = (sub.metadata?.supabase_user_id as string) || null
     if (!userId) return
 
-    const item = sub.items?.data?.[0] as unknown as { price?: { id: string }; current_period_end?: number }
-    const priceTier = tierFromPrice(item?.price?.id) ?? ((sub.metadata?.tier as string) || 'standard')
+    const items = (sub.items?.data ?? []) as unknown as { price?: { id: string }; quantity?: number; current_period_end?: number }[]
+    const planItem = items.find((i) => tierFromPrice(i.price?.id) !== null) ?? items[0]
+    const extraItem = items.find((i) => i.price?.id === process.env.STRIPE_PRICE_GDE_EXTRA)
+    const item = planItem
+    const priceTier = tierFromPrice(planItem?.price?.id) ?? ((sub.metadata?.tier as string) || 'standard')
     const status = sub.status
     const hasAccess = status === 'active' || status === 'trialing' || status === 'past_due' // past_due = grace period
     const tier = hasAccess ? priceTier : 'free'
@@ -53,6 +56,7 @@ export async function POST(req: Request) {
       subscription_current_period_end: periodEnd,
       subscription_cancel_at: cancelAt,
       breeder_pro: tier === 'pro',
+      extra_listings: hasAccess ? (extraItem?.quantity ?? 0) : 0,
     }).eq('id', userId)
 
     if (!hasAccess) {
