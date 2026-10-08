@@ -41,49 +41,49 @@
   --radius-xl: 0;
 
   /* GunDog Exchange — Blended Brand Palette */
-  --color-ink: #0E0E0E;
+  --color-ink: #0F0F0E;
   --color-ink-2: #1A1A1A;
-  --color-orange: #D4600A;
+  --color-orange: #D85A1C;
   --color-orange-deep: #A84808;
-  --color-bone: #F4EFE5;
-  --color-bone-2: #EAE4D6;
+  --color-bone: #EFE7D4;
+  --color-bone-2: #EFE7D4;
   --color-sand: #D9C8A6;
   --color-steel: #7C7A6E;
 }
 
 :root {
-  --background: #F4EFE5;
-  --foreground: #0E0E0E;
+  --background: #EFE7D4;
+  --foreground: #0F0F0E;
   --card: #ffffff;
-  --card-foreground: #0E0E0E;
+  --card-foreground: #0F0F0E;
   --popover: #ffffff;
-  --popover-foreground: #0E0E0E;
-  --primary: #D4600A;
+  --popover-foreground: #0F0F0E;
+  --primary: #D85A1C;
   --primary-foreground: #ffffff;
-  --secondary: #EAE4D6;
-  --secondary-foreground: #0E0E0E;
-  --muted: #EAE4D6;
+  --secondary: #EFE7D4;
+  --secondary-foreground: #0F0F0E;
+  --muted: #EFE7D4;
   --muted-foreground: #7C7A6E;
   --accent: #D9C8A6;
-  --accent-foreground: #0E0E0E;
+  --accent-foreground: #0F0F0E;
   --destructive: oklch(0.577 0.245 27.325);
   --border: #D9C8A6;
   --input: #D9C8A6;
-  --ring: #D4600A;
+  --ring: #D85A1C;
   --radius: 0rem;
-  --sidebar: #0E0E0E;
-  --sidebar-foreground: #F4EFE5;
-  --sidebar-primary: #D4600A;
+  --sidebar: #0F0F0E;
+  --sidebar-foreground: #EFE7D4;
+  --sidebar-primary: #D85A1C;
   --sidebar-primary-foreground: #ffffff;
   --sidebar-accent: #1A1A1A;
-  --sidebar-accent-foreground: #F4EFE5;
+  --sidebar-accent-foreground: #EFE7D4;
   --sidebar-border: rgba(255,255,255,0.1);
-  --sidebar-ring: #D4600A;
+  --sidebar-ring: #D85A1C;
 
   /* Shorthand tokens */
-  --ink: #0E0E0E;
-  --orange: #D4600A;
-  --bone: #F4EFE5;
+  --ink: #0F0F0E;
+  --orange: #D85A1C;
+  --bone: #EFE7D4;
   --sand: #D9C8A6;
   --steel: #7C7A6E;
 }
@@ -94,14 +94,16 @@
     border-radius: 0 !important;
   }
   body {
-    background: #F4EFE5;
-    color: #0E0E0E;
+    background: #EFE7D4;
+    color: #0F0F0E;
     font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.5;
+    overflow-x: hidden;
   }
   html {
     font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    overflow-x: hidden;
   }
 }
 
@@ -131,7 +133,7 @@
 
 /* Primary CTA — orange fill */
 .gx-btn {
-  background: #D4600A;
+  background: #D85A1C;
   color: white;
   font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
   font-weight: 700;

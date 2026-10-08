@@ -202,8 +202,8 @@ export default function BrowsePage() {
         </div>
 
         {/* Secondary filters */}
-        <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1" style={{ minWidth: 200, maxWidth: 360 }}>
+        <div className="flex flex-col sm:flex-row flex-wrap gap-3 items-stretch sm:items-center">
+          <div className="relative sm:flex-1" style={{ maxWidth: 360 }}>
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'rgba(239,231,212,0.22)' }} />
             <input
               type="text"
@@ -213,25 +213,27 @@ export default function BrowsePage() {
               style={{ ...inputStyle, width: '100%', paddingLeft: 36, paddingRight: 14 }}
             />
           </div>
-          <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} style={inputStyle}>
-            <option value="">All States</option>
-            {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-          <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)} style={inputStyle}>
-            <option value="">Any Gender</option>
-            <option value="male">Male</option>
-            <option value="female">Female</option>
-          </select>
-          <input type="number" placeholder="Min $" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ ...inputStyle, width: 90 }} />
-          <input type="number" placeholder="Max $" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ ...inputStyle, width: 90 }} />
-          {hasActiveFilters && (
-            <button
-              onClick={() => { setSearch(''); setActivePill('ALL'); setStateFilter(''); setGenderFilter(''); setMinPrice(''); setMaxPrice('') }}
-              style={{ ...sans, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(239,231,212,0.25)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 4px' }}
-            >
-              Clear
-            </button>
-          )}
+          <div className="flex flex-wrap gap-3 items-center">
+            <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)} style={inputStyle}>
+              <option value="">All States</option>
+              {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+            <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)} style={inputStyle}>
+              <option value="">Any Gender</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+            </select>
+            <input type="number" placeholder="Min $" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ ...inputStyle, width: 80 }} />
+            <input type="number" placeholder="Max $" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ ...inputStyle, width: 80 }} />
+            {hasActiveFilters && (
+              <button
+                onClick={() => { setSearch(''); setActivePill('ALL'); setStateFilter(''); setGenderFilter(''); setMinPrice(''); setMaxPrice('') }}
+                style={{ ...sans, fontWeight: 600, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(239,231,212,0.25)', background: 'none', border: 'none', cursor: 'pointer', padding: '9px 4px' }}
+              >
+                Clear
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

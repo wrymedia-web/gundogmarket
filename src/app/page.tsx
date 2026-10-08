@@ -3,7 +3,7 @@ import Image from 'next/image'
 import Navbar, { Wordmark } from '@/components/navbar'
 import FeaturedDogs from '@/components/featured-dogs'
 import { ShieldCheck, Trophy, CreditCard } from 'lucide-react'
-import { PLANS, PLAN_ORDER } from '@/lib/plans'
+import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -34,9 +34,9 @@ const SC: React.CSSProperties = {
 const breeds = ['Lab', 'GSP', 'Brittany', 'Vizsla', 'Setter', 'All Breeds']
 
 const features = [
-  { icon: <ShieldCheck size={26} style={{ color: '#EFE7D4' }} />, title: 'Verified Sellers', desc: 'Every seller is identity-verified. Reviews, ratings, and kennel history before you buy.' },
+  { icon: <ShieldCheck size={26} style={{ color: '#EFE7D4' }} />, title: 'Real Sellers', desc: 'Seller profiles with kennel info, location, and listing history. Message sellers directly before you buy.' },
   { icon: <Trophy size={26} style={{ color: '#EFE7D4' }} />, title: 'Hunt Test Data', desc: 'AKC, NAVHDA, HRC, and NSTRA titles on every profile. See proven field performance.' },
-  { icon: <CreditCard size={26} style={{ color: '#EFE7D4' }} />, title: 'Secure Escrow', desc: 'Funds held safely until you receive the dog. Full buyer protection — no wire fraud.' },
+  { icon: <CreditCard size={26} style={{ color: '#EFE7D4' }} />, title: 'Free to List', desc: 'Post your dog for free with photos, health certs, and hunt titles. Upgrade for more listings and featured placement.' },
 ]
 
 export default function HomePage() {
@@ -45,26 +45,26 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ minHeight: 680 }}>
+      <section className="relative" style={{ minHeight: 680 }}>
         <Image src="/photos/hero-dog-sunset.jpg" alt="German Shorthair Pointer at sunset" fill className="object-cover object-center" priority />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(10,10,10,0.92) 45%, rgba(10,10,10,0.5) 100%)' }} />
 
         <div className="relative z-10 max-w-7xl mx-auto px-6 flex flex-col items-start justify-center" style={{ minHeight: 680, paddingTop: 72, paddingBottom: 72 }}>
           {/* Editorial tag line */}
-          <div className="flex items-center gap-3 mb-6">
-            <div style={{ width: 32, height: 2, background: '#D85A1C' }} />
+          <div className="flex items-center gap-3 mb-6 flex-wrap">
+            <div style={{ width: 32, height: 2, background: '#D85A1C', flexShrink: 0 }} />
             <span style={{ ...SC, fontSize: 11, color: '#D85A1C' }}>The Sporting Dog Exchange</span>
-            <span style={{ ...serif, fontSize: 14, color: 'rgba(244,239,229,0.5)', marginLeft: 4 }}>— Of the field, for the field.</span>
+            <span className="hidden sm:inline" style={{ ...serif, fontSize: 14, color: 'rgba(244,239,229,0.5)' }}>— Of the field, for the field.</span>
           </div>
 
           {/* Main headline */}
-          <h1 className="mb-8" style={{ ...display, fontSize: 'clamp(56px, 9vw, 108px)', color: '#EFE7D4', maxWidth: 760 }}>
+          <h1 className="mb-8" style={{ ...display, fontSize: 'clamp(42px, 9vw, 108px)', color: '#EFE7D4', maxWidth: 760 }}>
             The<br />Marketplace<br />for Working<br />
             <span style={{ color: '#D85A1C' }}>Dogs.</span>
           </h1>
 
           <p style={{ ...sans, fontSize: 15, fontWeight: 400, color: 'rgba(244,239,229,0.65)', maxWidth: 440, lineHeight: 1.65, marginBottom: 32 }}>
-            Buy and sell trained bird dogs with verified sellers, secure payment, and hunt test data. Built for hunters.
+            Buy and sell trained bird dogs with real seller profiles, hunt test data, and photos. Built for hunters.
           </p>
 
           <div className="flex items-center gap-4 flex-wrap">
@@ -73,9 +73,9 @@ export default function HomePage() {
           </div>
 
           {/* Stats */}
-          <div className="flex items-center gap-6 mt-12 flex-wrap">
-            {['$0 to List', 'Escrow Protected', 'Hunt-Test Verified'].map((s, i) => (
-              <div key={s} className="flex items-center gap-6">
+          <div className="flex items-center gap-4 mt-10 flex-wrap">
+            {['$0 to List', 'Direct Contact', 'Hunt-Test Data'].map((s, i) => (
+              <div key={s} className="flex items-center gap-4">
                 {i > 0 && <div style={{ width: 1, height: 18, background: 'rgba(244,239,229,0.15)' }} />}
                 <span style={{ ...sans, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(244,239,229,0.45)' }}>{s}</span>
               </div>
@@ -85,8 +85,8 @@ export default function HomePage() {
       </section>
 
       {/* ── Breed filter ─────────────────────────────────── */}
-      <section style={{ background: '#1A1A1A', borderBottom: '2px solid #D85A1C', padding: '14px 24px' }}>
-        <div className="max-w-7xl mx-auto flex items-center gap-3 flex-wrap justify-center">
+      <section style={{ background: '#1A1A1A', borderBottom: '2px solid #D85A1C', padding: '14px 16px' }}>
+        <div className="max-w-7xl mx-auto flex items-center gap-2 flex-wrap justify-center">
           <span style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(244,239,229,0.35)', marginRight: 8 }}>Browse by Breed:</span>
           {breeds.map((breed) => (
             <Link key={breed} href={breed === 'All Breeds' ? '/dogs' : `/dogs?breed=${encodeURIComponent(breed)}`} style={{
@@ -153,9 +153,9 @@ export default function HomePage() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {[
-              { num: '01', title: 'Browse & Filter', desc: 'Search by breed, training level, location, and price. View hunt titles, health certs, and seller ratings.' },
-              { num: '02', title: 'Contact Seller', desc: 'Message verified sellers directly. Ask for videos, vet records, or a live demo. No middlemen.' },
-              { num: '03', title: 'Secure the Deal', desc: 'Pay through escrow. Funds release only after you receive the dog. Full buyer protection.' },
+              { num: '01', title: 'Browse & Filter', desc: 'Search by breed, training level, location, and price. View hunt titles, health certs, and seller profiles.' },
+              { num: '02', title: 'Contact Seller', desc: 'Message sellers directly through the platform. Ask for videos, vet records, or a live demo.' },
+              { num: '03', title: 'Close the Deal', desc: 'Coordinate directly with the seller on price, pickup, and shipping. Your deal, your terms.' },
             ].map((step) => (
               <div key={step.num} style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(244,239,229,0.08)', padding: '36px' }}>
                 <div style={{ ...display, fontSize: 48, color: '#D85A1C', marginBottom: 16 }}>{step.num}</div>
@@ -176,39 +176,27 @@ export default function HomePage() {
               Start Free.<br /><span style={{ color: '#D85A1C' }}>Upgrade for More.</span>
             </h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
-            {PLAN_ORDER.map((planId) => {
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
+            {PLAN_ORDER.map((planId: PlanId) => {
               const p = PLANS[planId]
-              const plan = {
-                name: p.name,
-                price: p.price,
-                period: p.period,
-                trial: p.trial,
-                items: p.features,
-                cta: p.cta,
-                href: `/upgrade?plan=${p.id}`,
-                dark: p.id === 'pro',
-              }
+              const dark = p.id === 'pro'
               return (
-              <div key={plan.name} style={{ background: plan.dark ? '#0F0F0E' : 'white', border: `1px solid ${plan.dark ? '#D85A1C' : '#D9C8A6'}`, padding: '36px', display: 'flex', flexDirection: 'column' }}>
-                {plan.dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 16, alignSelf: 'flex-start' }}>Most Popular</div>}
-                <div style={{ ...display, fontSize: 18, color: plan.dark ? '#EFE7D4' : '#0F0F0E', marginBottom: 4 }}>{plan.name}</div>
-                <div className="flex items-baseline gap-2 mb-2">
-                  <span style={{ ...display, fontSize: 48, color: plan.dark ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{plan.price}</span>
-                  <span style={{ ...sans, fontSize: 13, color: plan.dark ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{plan.period}</span>
-                </div>
-                <div style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', marginBottom: 20, minHeight: 14 }}>
-                  {plan.trial ?? ''}
+              <div key={p.name} style={{ background: dark ? '#0F0F0E' : 'white', border: `1px solid ${dark ? '#D85A1C' : '#D9C8A6'}`, padding: '36px', display: 'flex', flexDirection: 'column' }}>
+                {dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 16, alignSelf: 'flex-start' }}>For Breeders</div>}
+                <div style={{ ...display, fontSize: 18, color: dark ? '#EFE7D4' : '#0F0F0E', marginBottom: 4 }}>{p.name}</div>
+                <div className="flex items-baseline gap-2 mb-6">
+                  <span style={{ ...display, fontSize: 48, color: dark ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{p.price}</span>
+                  {p.period && <span style={{ ...sans, fontSize: 13, color: dark ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{p.period}</span>}
                 </div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', flex: 1 }}>
-                  {plan.items.map((item) => (
-                    <li key={item} className="flex items-center gap-2.5 mb-2.5" style={{ ...sans, fontSize: 13, fontWeight: 400, color: plan.dark ? 'rgba(244,239,229,0.7)' : '#7C7A6E' }}>
+                  {p.features.map((item) => (
+                    <li key={item} className="flex items-center gap-2.5 mb-2.5" style={{ ...sans, fontSize: 13, fontWeight: 400, color: dark ? 'rgba(244,239,229,0.7)' : '#7C7A6E' }}>
                       <span style={{ color: '#D85A1C', fontWeight: 700 }}>✓</span> {item}
                     </li>
                   ))}
                 </ul>
-                <Link href={plan.href} style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: plan.dark ? '#D85A1C' : 'transparent', color: plan.dark ? 'white' : '#0F0F0E', border: `1px solid ${plan.dark ? '#D85A1C' : '#D9C8A6'}`, padding: '14px', display: 'block', textAlign: 'center', textDecoration: 'none' }}>
-                  {plan.cta}
+                <Link href={dark ? '/upgrade' : '/sell'} style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: dark ? '#D85A1C' : 'transparent', color: dark ? 'white' : '#0F0F0E', border: `1px solid ${dark ? '#D85A1C' : '#D9C8A6'}`, padding: '14px', display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                  {p.cta}
                 </Link>
               </div>
               )
@@ -221,11 +209,13 @@ export default function HomePage() {
       <footer style={{ background: '#0F0F0E', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '40px 24px' }}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <Wordmark />
-          <div className="flex items-center gap-8 flex-wrap justify-center">
+          <div className="flex items-center gap-5 flex-wrap justify-center">
             {[
               { label: 'Browse Dogs', href: '/dogs' },
               { label: 'Sell a Dog', href: '/sell' },
               { label: 'How It Works', href: '/#how-it-works' },
+              { label: 'Terms', href: '/terms' },
+              { label: 'Privacy', href: '/privacy' },
               { label: 'Sign In', href: '/login' },
             ].map((link) => (
               <Link key={link.label} href={link.href} style={{ ...sans, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.3)', textDecoration: 'none' }}>

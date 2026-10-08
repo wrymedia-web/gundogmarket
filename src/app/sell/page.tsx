@@ -313,16 +313,17 @@ export default function SellPage() {
         .eq('id', user.id)
         .maybeSingle()
       const subActive = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing'
-      const cap = listingCap(profile?.subscription_tier, subActive)
+      const effectiveTier = subActive ? profile?.subscription_tier : 'free'
+      const cap = listingCap(effectiveTier)
       const { count: activeCount } = await supabase
         .from('dogs')
         .select('id', { count: 'exact', head: true })
         .eq('seller_id', user.id)
         .eq('status', 'active')
       if ((activeCount ?? 0) >= cap) {
-        setError(profile?.subscription_tier === 'pro' && subActive
-          ? `Breeder Pro allows up to ${PLANS.pro.maxListings} active listings. Mark one sold, or move up to Kennel for unlimited listings at /upgrade.`
-          : `Your plan allows ${cap} active listing${cap === 1 ? '' : 's'}. Upgrade at /upgrade — Breeder Pro gets you ${PLANS.pro.maxListings}, Kennel is unlimited.`)
+        setError(effectiveTier === 'pro'
+          ? `Breeder Pro allows up to ${PLANS.pro.maxListings} active listings. Mark one as sold to list another.`
+          : `Your plan allows ${cap} active listing. Upgrade to Breeder Pro at /upgrade for up to ${PLANS.pro.maxListings} listings.`)
         return
       }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
@@ -347,7 +348,7 @@ export default function SellPage() {
         pedigree_url: form.pedigree_url || null,
         video_url: form.video_url || null,
         status: 'active',
-        featured: subActive && (profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'kennel'),
+        featured: subActive && profile?.subscription_tier === 'pro',
       })
       if (insertErr) {
         setError(`Publish failed: ${insertErr.message}`)
@@ -409,7 +410,7 @@ export default function SellPage() {
 
       <div className="max-w-3xl mx-auto px-6 py-10">
         {/* Step indicator */}
-        <div className="flex items-center mb-10">
+        <div className="flex items-start mb-10">
           {STEPS.map((label, i) => (
             <div key={label} className="flex items-center flex-1">
               <div className="flex flex-col items-center">
@@ -418,21 +419,22 @@ export default function SellPage() {
                   background: i <= step ? '#D85A1C' : '#EFE7D4',
                   color: i <= step ? 'white' : '#7C7A6E',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
                   ...sans, fontWeight: 700, fontSize: 11,
                 }}>
                   {i < step ? '✓' : i + 1}
                 </div>
-                <span className="mt-1.5 text-center hidden sm:block" style={{ ...sans, fontWeight: 700, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: i <= step ? '#D85A1C' : '#7C7A6E' }}>{label}</span>
+                <span className="mt-1.5 text-center hidden sm:block" style={{ ...sans, fontWeight: 700, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: i <= step ? '#D85A1C' : '#7C7A6E', maxWidth: 60, wordBreak: 'break-word' }}>{label}</span>
               </div>
               {i < STEPS.length - 1 && (
-                <div className="flex-1 mx-2 mb-6" style={{ height: 1, background: i < step ? '#D85A1C' : '#D9C8A6' }} />
+                <div className="flex-1 mx-1 mt-4" style={{ height: 1, background: i < step ? '#D85A1C' : '#D9C8A6' }} />
               )}
             </div>
           ))}
         </div>
 
         {/* Step panels */}
-        <div className="p-8" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
+        <div className="p-5 sm:p-8" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
           {step === 0 && (
             <div className="space-y-5">
               <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>Dog Info</h2>
@@ -601,7 +603,7 @@ export default function SellPage() {
                   <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#B03A1F', marginTop: 8 }}>{error}</p>
                 )}
                 {form.images.length > 0 && (
-                  <div className="grid grid-cols-5 gap-3 mt-4">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mt-4">
                     {form.images.map((url) => (
                       <div key={url} style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', border: '1px solid #D9C8A6' }}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
