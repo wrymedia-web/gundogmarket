@@ -42,7 +42,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="5. Subscriptions">
-            Paid plans (Breeder Pro) are billed monthly through Stripe. You may cancel at any time from your account settings. Cancellation takes effect at the end of the current billing period. No refunds for partial months.
+            Listings require a paid subscription: Standard ($29 every 30 days) or Featured ($49 every 30 days), billed through Stripe. New sellers may start with a 7-day free trial of Standard; a valid payment method is required, and the trial automatically converts to the $29 Standard plan when it ends unless canceled first. All plans renew automatically every 30 days until canceled. You may cancel at any time from Dashboard → Settings → Manage Billing; cancellation takes effect at the end of the current paid period and you keep access until then. If a renewal payment fails and is not resolved within the grace period, your listing is removed from public visibility (your information and photos are preserved). No refunds for partial periods.
           </Section>
 
           <Section title="6. Prohibited Conduct">

@@ -93,10 +93,10 @@ export default function SignupPage() {
         </div>
         <div>
           <h2 style={{ ...display, fontSize: 'clamp(40px, 5vw, 56px)', color: '#EFE7D4', marginBottom: 16 }}>
-            LIST YOUR DOG.<br />REACH THOUSANDS.<br /><span style={{ color: '#D85A1C' }}>FOR FREE.</span>
+            LIST YOUR DOG.<br />REACH THOUSANDS.<br /><span style={{ color: '#D85A1C' }}>7-DAY FREE TRIAL.</span>
           </h2>
           <p style={{ ...sans, fontWeight: 400, fontSize: 17, color: 'rgba(244,239,229,0.5)', lineHeight: 1.6 }}>
-            Free listing · Seller profile · Direct buyer contact.
+            7-day free trial · Seller profile · Direct buyer contact.
           </p>
         </div>
         <div style={{ ...sans, fontWeight: 600, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'rgba(244,239,229,0.2)' }}>GunDog Exchange © 2026</div>

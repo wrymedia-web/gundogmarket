@@ -7,7 +7,7 @@ const BASE = 'https://gundogexchange.com'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
-    '', '/dogs', '/sell', '/login', '/signup', '/upgrade', '/terms', '/privacy',
+    '', '/dogs', '/sell', '/login', '/signup', '/pricing', '/terms', '/privacy',
   ].map((path) => ({
     url: `${BASE}${path}`,
     changeFrequency: path === '/dogs' ? 'daily' : 'weekly',

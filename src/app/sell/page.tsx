@@ -1,10 +1,10 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar'
 import { ALL_BREEDS, US_STATES, formatAge } from '@/lib/mock-data'
-import { PLANS, listingCap } from '@/lib/plans'
+import { entitlements, type Entitlements } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X } from 'lucide-react'
 
@@ -178,6 +178,24 @@ export default function SellPage() {
   const router = useRouter()
   const supabase = createClient()
 
+  // Plan entitlements gate: publishing requires an active plan
+  const [ent, setEnt] = useState<Entitlements | null>(null)
+  useEffect(() => {
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { router.push('/login?redirect=/sell'); return }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_tier, subscription_status')
+        .eq('id', user.id)
+        .maybeSingle()
+      const e = entitlements(profile?.subscription_tier, profile?.subscription_status)
+      if (!e.canPublish) { router.push('/pricing'); return }
+      setEnt(e)
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+  const maxPhotos = ent?.maxPhotos ?? 1
+
   function update(key: keyof FormData, value: string | string[]) {
     setForm((prev) => ({ ...prev, [key]: value }))
   }
@@ -190,10 +208,10 @@ export default function SellPage() {
       setError('You must be logged in to upload photos.')
       return
     }
-    const slotsLeft = MAX_PHOTOS - form.images.length
+    const slotsLeft = maxPhotos - form.images.length
     const incoming = Array.from(files).slice(0, slotsLeft)
     if (files.length > slotsLeft) {
-      setError(`Only ${slotsLeft} photo slot${slotsLeft === 1 ? '' : 's'} left (10 max).`)
+      setError(`Only ${slotsLeft} photo slot${slotsLeft === 1 ? '' : 's'} left (plan limit).`)
     }
     setUploading(true)
     try {
@@ -255,7 +273,7 @@ export default function SellPage() {
     if (!user) { setError('You must be logged in to upload paperwork.'); return }
     const slotsLeft = MAX_DOCS - form.documents.length
     const incoming = Array.from(files).slice(0, slotsLeft)
-    if (files.length > slotsLeft) setError(`Only ${slotsLeft} paperwork slot${slotsLeft === 1 ? '' : 's'} left (10 max).`)
+    if (files.length > slotsLeft) setError(`Only ${slotsLeft} paperwork slot${slotsLeft === 1 ? '' : 's'} left (plan limit).`)
     setUploading(true)
     try {
       const uploaded: { name: string; url: string }[] = []
@@ -308,24 +326,29 @@ export default function SellPage() {
         router.push('/login')
         return
       }
-      // Look up plan + count active listings to enforce tier cap
+      // Server-enforced too (DB trigger); this is the friendly front door
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_tier, subscription_status')
         .eq('id', user.id)
         .maybeSingle()
-      const subActive = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing'
-      const effectiveTier = subActive ? profile?.subscription_tier : 'free'
-      const cap = listingCap(effectiveTier)
+      const e = entitlements(profile?.subscription_tier, profile?.subscription_status)
+      if (!e.canPublish) { router.push('/pricing'); return }
       const { count: activeCount } = await supabase
         .from('dogs')
         .select('id', { count: 'exact', head: true })
         .eq('seller_id', user.id)
         .eq('status', 'active')
-      if ((activeCount ?? 0) >= cap) {
-        setError(effectiveTier === 'pro'
-          ? `Breeder Pro allows up to ${PLANS.pro.maxListings} active listings. Mark one as sold to list another.`
-          : `Your plan allows ${cap} active listing. Upgrade to Breeder Pro at /upgrade for up to ${PLANS.pro.maxListings} listings.`)
+      if ((activeCount ?? 0) >= e.maxListings) {
+        setError(`Your plan allows ${e.maxListings} active listing${e.maxListings === 1 ? '' : 's'}. Mark one as sold or remove it to publish another.`)
+        return
+      }
+      if (form.images.length > e.maxPhotos) {
+        setError(`Your plan includes ${e.maxPhotos} photo${e.maxPhotos === 1 ? '' : 's'}. Remove ${form.images.length - e.maxPhotos} or upgrade to Featured for up to 10.`)
+        return
+      }
+      if (!e.videoAllowed && form.video_url.trim()) {
+        setError('Video is included with the Featured plan. Remove the video link or upgrade.')
         return
       }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
@@ -352,7 +375,7 @@ export default function SellPage() {
         pedigree_url: form.pedigree_url || null,
         video_url: form.video_url || null,
         status: 'active',
-        featured: subActive && profile?.subscription_tier === 'pro',
+        featured: e.featuredAllowed,
       })
       if (insertErr) {
         setError(`Publish failed: ${insertErr.message}`)
@@ -608,23 +631,23 @@ export default function SellPage() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
-                  multiple
+                  multiple={maxPhotos > 1}
                   onChange={(e) => handleFiles(e.target.files)}
                   style={{ display: 'none' }}
                 />
                 <div
-                  onClick={() => !uploading && form.images.length < MAX_PHOTOS && fileInputRef.current?.click()}
+                  onClick={() => !uploading && form.images.length < maxPhotos && fileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault() }}
                   onDrop={(e) => { e.preventDefault(); if (!uploading) handleFiles(e.dataTransfer.files) }}
                   className="flex flex-col items-center justify-center py-16 mt-2"
-                  style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading || form.images.length >= MAX_PHOTOS ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+                  style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading || form.images.length >= maxPhotos ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
                 >
                   <div style={{ fontSize: 36, opacity: 0.25, marginBottom: 12 }}>📷</div>
                   <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#0F0F0E', marginBottom: 4 }}>
-                    {uploading ? 'Uploading…' : form.images.length >= MAX_PHOTOS ? 'Photo limit reached' : 'Drop photos here or click to upload'}
+                    {uploading ? 'Uploading…' : form.images.length >= maxPhotos ? 'Photo limit reached' : 'Drop photos here or click to upload'}
                   </p>
                   <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E' }}>
-                    Up to {MAX_PHOTOS} photos · JPG, PNG, WEBP · Max 5MB each · {form.images.length}/{MAX_PHOTOS} added
+                    Up to {maxPhotos} photo{maxPhotos === 1 ? '' : 's'} · JPG, PNG, WEBP · Max 5MB each · {form.images.length}/{maxPhotos} added
                   </p>
                 </div>
                 {error && step === 2 && (
@@ -649,11 +672,19 @@ export default function SellPage() {
                   </div>
                 )}
               </div>
-              <div>
-                <InputLabel>Video URL (optional)</InputLabel>
-                <FieldInput value={form.video_url} onChange={(v) => update('video_url', v)} placeholder="https://youtube.com/watch?v=..." />
-                <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginTop: 6 }}>YouTube, Vimeo, or any video link showing the dog in action</p>
-              </div>
+              {ent?.videoAllowed ? (
+                <div>
+                  <InputLabel>Video URL (1 video — Featured plan)</InputLabel>
+                  <FieldInput value={form.video_url} onChange={(v) => update('video_url', v)} placeholder="https://youtube.com/watch?v=..." />
+                  <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginTop: 6 }}>YouTube, Vimeo, or any video link showing the dog in action</p>
+                </div>
+              ) : (
+                <div style={{ border: '1px dashed #D9C8A6', padding: '14px 16px' }}>
+                  <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E' }}>
+                    Want to add a video and up to 10 photos? <a href="/pricing" style={{ color: '#D85A1C', fontWeight: 700 }}>Upgrade to Featured</a>.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Paperwork</h3>
@@ -664,7 +695,7 @@ export default function SellPage() {
                   ref={docInputRef}
                   type="file"
                   accept="application/pdf,image/jpeg,image/png,image/webp"
-                  multiple
+                  multiple={maxPhotos > 1}
                   onChange={(e) => handleDocs(e.target.files)}
                   style={{ display: 'none' }}
                 />

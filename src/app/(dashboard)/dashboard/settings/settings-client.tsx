@@ -20,7 +20,21 @@ const sectionTitle: React.CSSProperties = {
   ...montserrat, fontWeight: 900, fontSize: 14, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#0E0E0E', marginBottom: 12,
 }
 
-export default function SettingsClient({ email, tier, status }: { email: string; tier: string; status: string | null }) {
+export default function SettingsClient({ email, tier, status, periodEnd, cancelAt, hasBilling }: {
+  email: string; tier: string; status: string | null
+  periodEnd: string | null; cancelAt: string | null; hasBilling: boolean
+}) {
+  const [portalBusy, setPortalBusy] = useState(false)
+  const [portalErr, setPortalErr] = useState<string | null>(null)
+  async function openPortal() {
+    setPortalBusy(true); setPortalErr(null)
+    try {
+      const res = await fetch('/api/billing/portal', { method: 'POST' })
+      const json = await res.json()
+      if (!res.ok || !json.url) { setPortalErr(json.error || 'Billing portal unavailable.'); return }
+      window.location.href = json.url
+    } finally { setPortalBusy(false) }
+  }
   const router = useRouter()
   const supabase = createClient()
 
@@ -72,21 +86,52 @@ export default function SettingsClient({ email, tier, status }: { email: string;
       {/* Subscription */}
       <div style={{ ...card, marginBottom: 20 }}>
         <h2 style={sectionTitle}>Subscription</h2>
-        <p style={{ ...inter, fontSize: 14, color: '#0E0E0E' }}>
-          Current plan:{' '}
-          <span style={{ fontWeight: 700, color: '#D4600A' }}>{tier === 'pro' ? 'Breeder Pro' : 'Free'}</span>
-          {status ? <span style={{ color: '#7C7A6E' }}> ({status})</span> : null}
-        </p>
-        {tier !== 'pro' && (
-          <Link href="/upgrade" className="inline-block mt-3" style={{ ...inter, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: '#D4600A', color: 'white', padding: '10px 24px', textDecoration: 'none' }}>
-            Upgrade to Pro
-          </Link>
-        )}
-        {tier === 'pro' && (
-          <p style={{ ...inter, fontSize: 12, color: '#7C7A6E', marginTop: 8 }}>
-            To cancel or update billing, contact support@gundogexchange.com.
-          </p>
-        )}
+        {(() => {
+          const names: Record<string, string> = { standard: 'Standard — $29/30 days', featured: 'Featured — $49/30 days', pro: 'Breeder Pro (legacy)', free: 'No plan' }
+          const active = status === 'active' || status === 'trialing' || status === 'past_due'
+          const planLabel = active ? (names[tier] ?? tier) : 'No active plan'
+          return (
+            <>
+              <p style={{ ...inter, fontSize: 14, color: '#0E0E0E' }}>
+                Current plan: <span style={{ fontWeight: 700, color: '#D4600A' }}>{planLabel}</span>
+                {status === 'trialing' && <span style={{ color: '#92400E' }}> — free trial</span>}
+                {status === 'past_due' && <span style={{ color: '#B03A1F' }}> — payment issue, update your card</span>}
+              </p>
+              {active && periodEnd && (
+                <p style={{ ...inter, fontSize: 13, color: '#7C7A6E', marginTop: 6 }}>
+                  {cancelAt
+                    ? <>Cancels on <strong>{new Date(cancelAt).toLocaleDateString()}</strong> — you keep full access until then. No further charges.</>
+                    : status === 'trialing'
+                      ? <>Trial converts to the $29 Standard plan on <strong>{new Date(periodEnd).toLocaleDateString()}</strong> unless canceled before then.</>
+                      : <>Renews on <strong>{new Date(periodEnd).toLocaleDateString()}</strong>.</>}
+                </p>
+              )}
+              <div className="flex gap-3 mt-3 flex-wrap">
+                {hasBilling && active && (
+                  <button onClick={openPortal} disabled={portalBusy} style={{ ...inter, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: '#D4600A', color: 'white', border: 'none', padding: '10px 24px', cursor: portalBusy ? 'wait' : 'pointer' }}>
+                    {portalBusy ? 'Opening…' : 'Manage Billing'}
+                  </button>
+                )}
+                {!active && (
+                  <Link href="/pricing" className="inline-block" style={{ ...inter, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: '#D4600A', color: 'white', padding: '10px 24px', textDecoration: 'none' }}>
+                    Choose a Plan
+                  </Link>
+                )}
+                {active && tier === 'standard' && (
+                  <Link href="/pricing" className="inline-block" style={{ ...inter, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'transparent', color: '#D4600A', border: '1px solid #D4600A', padding: '10px 24px', textDecoration: 'none' }}>
+                    See Featured Perks
+                  </Link>
+                )}
+              </div>
+              {hasBilling && active && (
+                <p style={{ ...inter, fontSize: 11, color: '#7C7A6E', marginTop: 8 }}>
+                  Upgrade, downgrade, update your card, or cancel in Manage Billing. Cancellations keep access until the end of the paid period.
+                </p>
+              )}
+              {portalErr && <p style={{ ...inter, fontSize: 12, color: '#B03A1F', marginTop: 8 }}>{portalErr}</p>}
+            </>
+          )
+        })()}
       </div>
 
       {/* Password */}

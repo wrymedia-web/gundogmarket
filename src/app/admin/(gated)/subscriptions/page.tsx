@@ -21,8 +21,8 @@ export default async function AdminSubscriptions() {
     getStripeAdminData(),
   ])
   const emailById = new Map((usersRes.data?.users ?? []).map((u) => [u.id, u.email ?? '—']))
-  const pros = (profRes.data ?? []).filter((p) => p.subscription_tier === 'pro')
-  const frees = (profRes.data ?? []).filter((p) => p.subscription_tier !== 'pro')
+  const pros = (profRes.data ?? []).filter((p) => ['pro', 'standard', 'featured'].includes(p.subscription_tier ?? ''))
+  const frees = (profRes.data ?? []).filter((p) => !['pro', 'standard', 'featured'].includes(p.subscription_tier ?? ''))
 
   return (
     <div>
@@ -55,7 +55,7 @@ export default async function AdminSubscriptions() {
 
       {/* Pro subscribers */}
       <p style={{ ...sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D85A1C', marginBottom: 10 }}>
-        Breeder Pro accounts ({pros.length})
+        Paid accounts ({pros.length})
       </p>
       <div style={{ background: 'white', border: '1px solid #D9C8A6', marginBottom: 24, overflowX: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>

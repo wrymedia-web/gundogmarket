@@ -36,7 +36,7 @@ const breeds = ['Lab', 'GSP', 'Brittany', 'Vizsla', 'Setter', 'All Breeds']
 const features = [
   { icon: <ShieldCheck size={26} style={{ color: '#EFE7D4' }} />, title: 'Real Sellers', desc: 'Seller profiles with kennel info, location, and listing history. Message sellers directly before you buy.' },
   { icon: <Trophy size={26} style={{ color: '#EFE7D4' }} />, title: 'Hunt Test Data', desc: 'AKC, NAVHDA, HRC, and NSTRA titles on every profile. See proven field performance.' },
-  { icon: <CreditCard size={26} style={{ color: '#EFE7D4' }} />, title: 'Free to List', desc: 'Post your dog for free with photos, health certs, and hunt titles. Upgrade for more listings and featured placement.' },
+  { icon: <CreditCard size={26} style={{ color: '#EFE7D4' }} />, title: '7-Day Free Trial', desc: 'Try it free for a week — post your dog with photos, health certs, and hunt titles. Plans from $29 every 30 days, cancel any time.' },
 ]
 
 export default function HomePage() {
@@ -74,7 +74,7 @@ export default function HomePage() {
 
           {/* Stats */}
           <div className="flex items-center gap-4 mt-10 flex-wrap">
-            {['$0 to List', 'Direct Contact', 'Hunt-Test Data'].map((s, i) => (
+            {['7-Day Free Trial', 'Direct Contact', 'Hunt-Test Data'].map((s, i) => (
               <div key={s} className="flex items-center gap-4">
                 {i > 0 && <div style={{ width: 1, height: 18, background: 'rgba(244,239,229,0.15)' }} />}
                 <span style={{ ...sans, fontSize: 11, fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'rgba(244,239,229,0.45)' }}>{s}</span>
@@ -173,16 +173,16 @@ export default function HomePage() {
           <div className="text-center mb-14">
             <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 10 }}>Pricing</div>
             <h2 style={{ ...display, fontSize: 36, color: '#0F0F0E' }}>
-              Start Free.<br /><span style={{ color: '#D85A1C' }}>Upgrade for More.</span>
+              Try It Free for 7 Days.<br /><span style={{ color: '#D85A1C' }}>Then $29 Every 30 Days.</span>
             </h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl mx-auto">
             {PLAN_ORDER.map((planId: PlanId) => {
               const p = PLANS[planId]
-              const dark = p.id === 'pro'
+              const dark = p.id === 'featured'
               return (
               <div key={p.name} style={{ background: dark ? '#0F0F0E' : 'white', border: `1px solid ${dark ? '#D85A1C' : '#D9C8A6'}`, padding: '36px', display: 'flex', flexDirection: 'column' }}>
-                {dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 16, alignSelf: 'flex-start' }}>For Breeders</div>}
+                {dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 16, alignSelf: 'flex-start' }}>Most Visibility</div>}
                 <div style={{ ...display, fontSize: 18, color: dark ? '#EFE7D4' : '#0F0F0E', marginBottom: 4 }}>{p.name}</div>
                 <div className="flex items-baseline gap-2 mb-6">
                   <span style={{ ...display, fontSize: 48, color: dark ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{p.price}</span>
@@ -195,7 +195,7 @@ export default function HomePage() {
                     </li>
                   ))}
                 </ul>
-                <Link href={dark ? '/upgrade' : '/sell'} style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: dark ? '#D85A1C' : 'transparent', color: dark ? 'white' : '#0F0F0E', border: `1px solid ${dark ? '#D85A1C' : '#D9C8A6'}`, padding: '14px', display: 'block', textAlign: 'center', textDecoration: 'none' }}>
+                <Link href="/pricing" style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: dark ? '#D85A1C' : 'transparent', color: dark ? 'white' : '#0F0F0E', border: `1px solid ${dark ? '#D85A1C' : '#D9C8A6'}`, padding: '14px', display: 'block', textAlign: 'center', textDecoration: 'none' }}>
                   {p.cta}
                 </Link>
               </div>

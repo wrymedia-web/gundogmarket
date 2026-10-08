@@ -33,20 +33,26 @@ export type StripeAdminData = {
 
 export async function getStripeAdminData(): Promise<StripeAdminData> {
   const secret = process.env.STRIPE_SECRET_KEY
-  const priceId = process.env.STRIPE_PRICE_GDE_PRO
+  const priceIds = [
+    process.env.STRIPE_PRICE_GDE_STANDARD,
+    process.env.STRIPE_PRICE_GDE_FEATURED,
+    process.env.STRIPE_PRICE_GDE_PRO,
+  ].filter(Boolean) as string[]
   const empty: StripeAdminData = {
     configured: false, activeSubscribers: 0, trialing: 0, canceled: 0, mrrCents: 0,
     revenueCents90d: 0, failedInvoices90d: 0, upcomingRenewals: [], subscriptions: [], invoices: [],
   }
-  if (!secret || !priceId) return empty
+  if (!secret || priceIds.length === 0) return empty
 
   const stripe = new Stripe(secret)
 
-  const subs = await stripe.subscriptions.list({
-    price: priceId, status: 'all', limit: 100, expand: ['data.customer'],
-  })
+  const subLists = await Promise.all(priceIds.map((pid) =>
+    stripe.subscriptions.list({ price: pid, status: 'all', limit: 100, expand: ['data.customer'] })
+  ))
+  const seen = new Set<string>()
+  const subsData = subLists.flatMap((l) => l.data).filter((s) => !seen.has(s.id) && seen.add(s.id))
 
-  const subscriptions = subs.data.map((s) => {
+  const subscriptions = subsData.map((s) => {
     const cust = s.customer as Stripe.Customer | Stripe.DeletedCustomer
     const email = 'email' in cust ? (cust.email ?? '—') : '(deleted)'
     const item = s.items.data[0] as unknown as { current_period_end?: number; price?: Stripe.Price }
@@ -74,8 +80,11 @@ export async function getStripeAdminData(): Promise<StripeAdminData> {
   const since = Math.floor(Date.now() / 1000) - 90 * 86400
   const invList = await stripe.invoices.list({ limit: 100, created: { gte: since }, expand: ['data.customer'] })
   const gdeInvoices = invList.data.filter((inv) =>
-    inv.lines.data.some((l) => (l as unknown as { price?: { id: string } }).price?.id === priceId ||
-      (l.pricing as unknown as { price_details?: { price?: string } })?.price_details?.price === priceId)
+    inv.lines.data.some((l) => {
+      const pid = (l as unknown as { price?: { id: string } }).price?.id ??
+        (l.pricing as unknown as { price_details?: { price?: string } })?.price_details?.price
+      return !!pid && priceIds.includes(pid)
+    })
   )
   const invoices = gdeInvoices.map((inv) => {
     const cust = inv.customer as Stripe.Customer | Stripe.DeletedCustomer | null
