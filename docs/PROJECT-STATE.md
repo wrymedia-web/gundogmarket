@@ -75,3 +75,10 @@ Live at gundogexchange.com. **READY WITH MINOR ISSUES** — full prod regression
 1. New-message email notification via Resend (biggest marketplace-liveness win)
 2. Stripe setup once Wes picks the account → set env vars → webhook secret → test upgrade e2e
 3. Commit hygiene: untangle Wes's brand WIP, commit the shipped working tree
+
+## Pricing v2 — BUILT ON BRANCH `pricing-v2`, AWAITING WES APPROVAL (2026-10-08)
+- New model: Free Trial ($0/7d, card required, auto-converts to Standard) → Standard ($29/30d, 1 listing, 1 photo, no video) · Featured ($49/30d, 10 photos, 1 video, homepage placement). No free tier for new sellers.
+- Preview (SSO-protected): deployed from branch; prod UNTOUCHED (still Free/Pro). 40/40 tests passed (`qa-gde/out/stage12.json`).
+- Already live in shared infra (prod-safe/additive): migration 007 (new tiers, 'expired' status, guard_dog_media trigger enforcing photo/video/listing caps server-side), Stripe LIVE products+prices (Standard price_1UOKYLJpDfzVQvhphOQGj63f, Featured price_1UOKYNJpDfzVQvhpIkUrxFcJ), Billing Portal config bpc_1UOKYNJpDfzVQvhpGImP6ALl.
+- Rollout steps when approved: merge pricing-v2 → deploy prod → add STRIPE_PRICE_GDE_STANDARD/FEATURED/PORTAL_CONFIG to Production env → decide grandfathering for 3 existing free listings (Rex/Nitro/Richie) → optional migration to block legacy free publishes.
+- Remaining test gap: real card-completion runs need a TEST-MODE Stripe key (dashboard copy) — all other behavior verified via live checkout-page inspection + signed-webhook lifecycle sims.

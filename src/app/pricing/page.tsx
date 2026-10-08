@@ -108,7 +108,7 @@ function PricingInner() {
               {busy === 'trial' ? 'Starting…' : 'Start Free 7-Day Trial'}
             </button>
             <p style={{ ...sans, fontSize: 11, color: '#7C7A6E', marginTop: 10, lineHeight: 1.5 }}>
-              Payment method required. Your trial converts to the <strong>$29/30-day Standard plan on {addDays(7)}</strong> and renews automatically every 30 days until you cancel. Cancel before then and you won&apos;t be charged.
+              Payment method required. Your trial converts to the <strong>$29/30-day Standard plan on {addDays(7)}</strong>{' '}and renews automatically every 30 days until you cancel. Cancel before then and you won&apos;t be charged.
             </p>
           </div>
 
