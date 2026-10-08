@@ -1,15 +1,6 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
-import { createServerClient } from '@supabase/ssr'
-
-// Service-role client for webhook writes (bypasses RLS)
-function serviceClient() {
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { cookies: { getAll: () => [], setAll: () => {} } },
-  )
-}
+import { createServiceClient } from '@/lib/supabase/service'
 
 export async function POST(req: Request) {
   const secret = process.env.STRIPE_SECRET_KEY
@@ -29,7 +20,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: `Bad signature: ${(err as Error).message}` }, { status: 400 })
   }
 
-  const supabase = serviceClient()
+  const supabase = createServiceClient()
 
   async function updateFromSubscription(sub: Stripe.Subscription) {
     const userId = (sub.metadata?.supabase_user_id as string) || null

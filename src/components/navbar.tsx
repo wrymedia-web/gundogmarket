@@ -1,8 +1,10 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Menu, X } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 const nav: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -44,6 +46,25 @@ export { Wordmark }
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [signedIn, setSignedIn] = useState<boolean | null>(null)
+  const router = useRouter()
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => setSignedIn(!!data.user))
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSignedIn(!!session?.user)
+    })
+    return () => sub.subscription.unsubscribe()
+  }, [])
+
+  async function handleSignOut() {
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    setMenuOpen(false)
+    router.push('/')
+    router.refresh()
+  }
 
   return (
     <nav style={{ background: '#0F0F0E', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
@@ -69,9 +90,20 @@ export default function Navbar() {
 
         {/* Right actions */}
         <div className="hidden md:flex items-center gap-4">
-          <Link href="/login" style={{ ...nav, color: 'rgba(244,239,229,0.55)', textDecoration: 'none' }} className="hover:opacity-80 transition-opacity">
-            Sign In
-          </Link>
+          {signedIn ? (
+            <>
+              <Link href="/dashboard" style={{ ...nav, color: 'rgba(244,239,229,0.65)', textDecoration: 'none' }} className="hover:text-white transition-colors">
+                Dashboard
+              </Link>
+              <button onClick={handleSignOut} style={{ ...nav, color: 'rgba(244,239,229,0.55)', background: 'none', border: 'none', cursor: 'pointer' }} className="hover:opacity-80 transition-opacity">
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <Link href="/login" style={{ ...nav, color: 'rgba(244,239,229,0.55)', textDecoration: 'none' }} className="hover:opacity-80 transition-opacity">
+              Sign In
+            </Link>
+          )}
           <Link href="/sell" className="gx-btn" style={{ fontSize: 11, padding: '10px 20px' }}>
             List a Dog
           </Link>
@@ -90,12 +122,19 @@ export default function Navbar() {
             { label: 'Browse Dogs', href: '/dogs' },
             { label: 'How It Works', href: '/#how-it-works' },
             { label: 'Pricing', href: '/#pricing' },
-            { label: 'Sign In', href: '/login' },
+            ...(signedIn
+              ? [{ label: 'Dashboard', href: '/dashboard' }]
+              : [{ label: 'Sign In', href: '/login' }]),
           ].map((item) => (
             <Link key={item.label} href={item.href} style={{ ...nav, color: 'rgba(244,239,229,0.7)', textDecoration: 'none' }} onClick={() => setMenuOpen(false)}>
               {item.label}
             </Link>
           ))}
+          {signedIn && (
+            <button onClick={handleSignOut} style={{ ...nav, color: 'rgba(244,239,229,0.7)', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left' }}>
+              Sign Out
+            </button>
+          )}
           <Link href="/sell" className="gx-btn" style={{ fontSize: 11, textAlign: 'center', display: 'block' }} onClick={() => setMenuOpen(false)}>
             List a Dog
           </Link>

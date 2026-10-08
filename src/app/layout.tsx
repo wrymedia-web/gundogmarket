@@ -23,11 +23,13 @@ const cormorantSC = Cormorant_SC({
 
 export const metadata: Metadata = {
   title: "GunDog Exchange — The Marketplace for Working Dogs",
-  description: "Buy and sell trained bird dogs with verified sellers, secure payment, and hunt test data. Built for hunters.",
+  description: "Buy and sell trained bird dogs with real seller profiles, hunt test data, and photos. Built for hunters.",
+  metadataBase: new URL('https://gundogexchange.com'),
   openGraph: {
     title: "GunDog Exchange — The Marketplace for Working Dogs",
-    description: "Buy and sell trained bird dogs with verified sellers, secure payment, and hunt test data.",
+    description: "Buy and sell trained bird dogs with real seller profiles, hunt test data, and photos.",
     type: "website",
+    siteName: "GunDog Exchange",
   },
 };
 

@@ -10,6 +10,7 @@ const inter: React.CSSProperties = {
 
 const navItems = [
   { label: 'My Listings', href: '/dashboard', icon: '🐕' },
+  { label: 'Messages', href: '/dashboard/messages', icon: '💬' },
   { label: 'Profile', href: '/dashboard/profile', icon: '👤' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
 ]
@@ -20,17 +21,39 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex" style={{ background: '#F4EFE5' }}>
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: '#F4EFE5' }}>
+      {/* Mobile top nav (sidebar is hidden below md) */}
+      <div className="md:hidden" style={{ background: '#0E0E0E', borderBottom: '2px solid #D4600A' }}>
+        <div className="px-4 pt-4 pb-2">
+          <Link href="/" className="flex items-center gap-1">
+            <span className="text-base font-black" style={{ ...montserrat, color: '#D4600A' }}>GUNDOG</span>
+            <span className="text-base font-black" style={{ ...montserrat, color: '#F4EFE5' }}>EXCHANGE</span>
+          </Link>
+        </div>
+        <nav className="flex overflow-x-auto px-2 pb-2">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="px-3 py-2 text-xs font-semibold whitespace-nowrap"
+              style={{ color: 'rgba(244,239,229,0.8)', ...inter }}
+            >
+              {item.icon} {item.label}
+            </Link>
+          ))}
+        </nav>
+      </div>
+
       {/* Sidebar */}
       <aside
-        className="w-64 shrink-0 flex flex-col"
+        className="w-64 shrink-0 hidden md:flex flex-col"
         style={{ background: '#0E0E0E', borderRight: '2px solid #D4600A' }}
       >
         {/* Logo */}
         <div className="p-6" style={{ borderBottom: '1px solid rgba(244,239,229,0.08)' }}>
           <Link href="/" className="flex items-center gap-1">
             <span className="text-lg font-black" style={{ ...montserrat, color: '#D4600A' }}>GUNDOG</span>
-            <span className="text-lg font-black" style={{ ...montserrat, color: '#F4EFE5' }}>MARKET</span>
+            <span className="text-lg font-black" style={{ ...montserrat, color: '#F4EFE5' }}>EXCHANGE</span>
           </Link>
           <p className="text-xs mt-1" style={{ color: 'rgba(244,239,229,0.3)', ...inter }}>
             Seller Dashboard
@@ -68,7 +91,7 @@ export default function DashboardLayout({
       <main className="flex-1 overflow-auto">
         {/* Top bar */}
         <div
-          className="px-8 py-4 flex items-center justify-between"
+          className="px-4 md:px-8 py-4 flex items-center justify-between"
           style={{ background: 'white', borderBottom: '1px solid #D9C8A6' }}
         >
           <div />
@@ -83,7 +106,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 md:p-8">
           {children}
         </div>
       </main>

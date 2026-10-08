@@ -10,6 +10,7 @@ import {
 } from '@/lib/mock-data'
 import { MapPin, CheckCircle, Trophy } from 'lucide-react'
 import ContactSeller from '@/components/contact-seller'
+import PhotoGallery from '@/components/photo-gallery'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -112,24 +113,7 @@ export default async function DogProfilePage({
           <div className="flex-1 min-w-0">
             {/* Photo gallery */}
             {dog.images && (dog.images as string[]).length > 0 ? (
-              <div className="w-full mb-6">
-                <div className="w-full flex items-center justify-center overflow-hidden" style={{ background: '#0F0F0E', border: '1px solid #D9C8A6', height: 400, position: 'relative' }}>
-                  <img
-                    src={(dog.images as string[])[0]}
-                    alt={dog.title}
-                    style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }}
-                  />
-                </div>
-                {(dog.images as string[]).length > 1 && (
-                  <div className="flex gap-2 mt-2 overflow-x-auto">
-                    {(dog.images as string[]).map((img: string, i: number) => (
-                      <div key={i} className="shrink-0" style={{ width: 80, height: 80, border: i === 0 ? '2px solid #D85A1C' : '1px solid #D9C8A6', overflow: 'hidden' }}>
-                        <img src={img} alt={`${dog.title} photo ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <PhotoGallery images={dog.images as string[]} title={dog.title} />
             ) : (
               <div className="w-full mb-6 flex items-center justify-center" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6', height: 400 }}>
                 <div className="text-center">

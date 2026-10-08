@@ -1,26 +1,13 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
-import type { PlanId } from '@/lib/plans'
-
-// Price IDs land in env once the Stripe account decision is made.
-const PRICE_ENV: Record<PlanId, string | undefined> = {
-  basic: process.env.STRIPE_PRICE_GDE_BASIC,
-  pro: process.env.STRIPE_PRICE_GDE_PRO,
-  kennel: process.env.STRIPE_PRICE_GDE_KENNEL,
-}
+import { createServiceClient } from '@/lib/supabase/service'
 
 export async function POST(req: Request) {
-  let plan: PlanId = 'pro'
-  try {
-    const body = await req.clone().json()
-    if (body?.plan === 'basic' || body?.plan === 'pro' || body?.plan === 'kennel') plan = body.plan
-  } catch { /* no body → default pro */ }
-
   const secret = process.env.STRIPE_SECRET_KEY
-  const priceId = PRICE_ENV[plan]
+  const priceId = process.env.STRIPE_PRICE_GDE_PRO
   if (!secret || !priceId) {
-    return NextResponse.json({ error: 'Stripe not configured yet' }, { status: 503 })
+    return NextResponse.json({ error: 'Paid plans aren’t available quite yet — check back soon.' }, { status: 503 })
   }
 
   const supabase = await createClient()
@@ -35,7 +22,6 @@ export async function POST(req: Request) {
 
   const stripe = new Stripe(secret)
 
-  // Reuse or create Stripe customer
   let customerId = profile?.stripe_customer_id
   if (!customerId) {
     const customer = await stripe.customers.create({
@@ -44,7 +30,8 @@ export async function POST(req: Request) {
       metadata: { supabase_user_id: user.id },
     })
     customerId = customer.id
-    await supabase.from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
+    // stripe_customer_id is a protected trust column — only service_role may write it
+    await createServiceClient().from('profiles').update({ stripe_customer_id: customerId }).eq('id', user.id)
   }
 
   const origin = new URL(req.url).origin
@@ -56,8 +43,7 @@ export async function POST(req: Request) {
     cancel_url: `${origin}/upgrade?canceled=1`,
     allow_promotion_codes: true,
     subscription_data: {
-      metadata: { supabase_user_id: user.id, tier: plan },
-      ...(plan === 'basic' ? { trial_period_days: 30 } : {}),
+      metadata: { supabase_user_id: user.id, tier: 'pro' },
     },
   })
 
