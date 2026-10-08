@@ -4,7 +4,7 @@ import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar'
 import { ALL_BREEDS, US_STATES } from '@/lib/mock-data'
-import { PLANS, listingCap } from '@/lib/plans'
+import { PLANS, listingCap, photoCap, videoCap, effectiveTier, type PlanId } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X } from 'lucide-react'
 
@@ -80,6 +80,17 @@ const REGISTRATION_OPTIONS = [
   'Sire/Dam Both Registered',
 ]
 
+interface PedigreeData {
+  sire_name: string
+  dam_name: string
+  reg_number: string
+  reg_org: string
+  sire_sire_name: string
+  sire_dam_name: string
+  dam_sire_name: string
+  dam_dam_name: string
+}
+
 interface FormData {
   breed: string
   name: string
@@ -100,6 +111,18 @@ interface FormData {
   images: string[]
   documents: { name: string; url: string }[]
   pedigree_url: string
+  pedigree: PedigreeData
+}
+
+const defaultPedigree: PedigreeData = {
+  sire_name: '',
+  dam_name: '',
+  reg_number: '',
+  reg_org: '',
+  sire_sire_name: '',
+  sire_dam_name: '',
+  dam_sire_name: '',
+  dam_dam_name: '',
 }
 
 const defaultForm: FormData = {
@@ -122,6 +145,7 @@ const defaultForm: FormData = {
   images: [],
   documents: [],
   pedigree_url: '',
+  pedigree: { ...defaultPedigree },
 }
 
 const fieldStyle: React.CSSProperties = {
@@ -170,14 +194,40 @@ export default function SellPage() {
   const [uploading, setUploading] = useState(false)
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [userTier, setUserTier] = useState<PlanId>('free')
+  const [tierLoaded, setTierLoaded] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
   const pedigreeInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
 
+  const planMaxPhotos = PLANS[userTier].maxPhotos
+  const planMaxVideos = PLANS[userTier].maxVideos
+
+  // Load user's subscription tier on mount
+  useState(() => {
+    ;(async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { setTierLoaded(true); return }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('subscription_tier, subscription_status')
+        .eq('id', user.id)
+        .maybeSingle()
+      if (profile) {
+        setUserTier(effectiveTier(profile.subscription_tier, profile.subscription_status))
+      }
+      setTierLoaded(true)
+    })()
+  })
+
   function update(key: keyof FormData, value: string | string[]) {
     setForm((prev) => ({ ...prev, [key]: value }))
+  }
+
+  function updatePedigree(key: keyof PedigreeData, value: string) {
+    setForm((prev) => ({ ...prev, pedigree: { ...prev.pedigree, [key]: value } }))
   }
 
   async function handleFiles(files: FileList | null) {
@@ -188,10 +238,14 @@ export default function SellPage() {
       setError('You must be logged in to upload photos.')
       return
     }
-    const slotsLeft = MAX_PHOTOS - form.images.length
+    const slotsLeft = planMaxPhotos - form.images.length
+    if (slotsLeft <= 0) {
+      setError(`Your ${PLANS[userTier].name} plan allows ${planMaxPhotos} photo${planMaxPhotos === 1 ? '' : 's'} per listing. Upgrade for more.`)
+      return
+    }
     const incoming = Array.from(files).slice(0, slotsLeft)
     if (files.length > slotsLeft) {
-      setError(`Only ${slotsLeft} photo slot${slotsLeft === 1 ? '' : 's'} left (10 max).`)
+      setError(`Only ${slotsLeft} photo slot${slotsLeft === 1 ? '' : 's'} left (${planMaxPhotos} max on ${PLANS[userTier].name} plan).`)
     }
     setUploading(true)
     try {
@@ -320,14 +374,31 @@ export default function SellPage() {
         .eq('seller_id', user.id)
         .eq('status', 'active')
       if ((activeCount ?? 0) >= cap) {
-        setError(profile?.subscription_tier === 'pro' && subActive
-          ? `Breeder Pro allows up to ${PLANS.pro.maxListings} active listings. Mark one sold, or move up to Kennel for unlimited listings at /upgrade.`
-          : `Your plan allows ${cap} active listing${cap === 1 ? '' : 's'}. Upgrade at /upgrade — Breeder Pro gets you ${PLANS.pro.maxListings}, Kennel is unlimited.`)
+        const resolved = effectiveTier(profile?.subscription_tier, profile?.subscription_status)
+        const planName = PLANS[resolved].name
+        setError(`Your ${planName} plan allows ${cap} active listing${cap === 1 ? '' : 's'}. Upgrade at /upgrade for more.`)
         return
       }
+
+      // Enforce photo/video limits server-side
+      const resolved = effectiveTier(profile?.subscription_tier, profile?.subscription_status)
+      const maxPhotosAllowed = PLANS[resolved].maxPhotos
+      const maxVideosAllowed = PLANS[resolved].maxVideos
+      const clampedImages = form.images.slice(0, maxPhotosAllowed)
+
+      // Video enforcement: strip video_url if plan doesn't allow videos
+      const videoUrl = maxVideosAllowed > 0 ? (form.video_url || null) : null
+
+      // Free-tier listings expire after 14 days
+      const listingDuration = PLANS[resolved].listingDurationDays
+      const expiresAt = listingDuration
+        ? new Date(Date.now() + listingDuration * 24 * 60 * 60 * 1000).toISOString()
+        : null
+
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
       const ageMonths = form.age_months ? parseInt(form.age_months, 10) : null
       const title = form.name ? `${form.name} — ${form.breed}` : form.breed
+      const hasPedigree = Object.values(form.pedigree).some((v) => v.trim() !== '')
       const { error: insertErr } = await supabase.from('dogs').insert({
         seller_id: user.id,
         title,
@@ -342,12 +413,14 @@ export default function SellPage() {
         health_certs: [...form.health_certs, ...splitOther(form.health_cert_other)],
         hunt_titles: [...form.hunt_titles, ...splitOther(form.hunt_title_other)],
         registrations: [...form.registrations, ...splitOther(form.registration_other)],
-        images: form.images,
+        images: clampedImages,
         documents: form.documents,
         pedigree_url: form.pedigree_url || null,
-        video_url: form.video_url || null,
+        pedigree: hasPedigree ? form.pedigree : {},
+        video_url: videoUrl,
+        listing_expires_at: expiresAt,
         status: 'active',
-        featured: subActive && (profile?.subscription_tier === 'pro' || profile?.subscription_tier === 'kennel'),
+        featured: subActive && (profile?.subscription_tier === 'kennel'),
       })
       if (insertErr) {
         setError(`Publish failed: ${insertErr.message}`)
@@ -551,6 +624,61 @@ export default function SellPage() {
                   <FieldInput value={form.hunt_title_other} onChange={(v) => update('hunt_title_other', v)} placeholder="e.g. UKC HR, custom trial placement (separate multiple with commas)" />
                 </div>
               </div>
+              <div>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Pedigree</h3>
+                <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginBottom: 12 }}>
+                  Optional — add lineage details to help serious buyers evaluate bloodlines.
+                </p>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <InputLabel>Sire (Father)</InputLabel>
+                    <FieldInput value={form.pedigree.sire_name} onChange={(v) => updatePedigree('sire_name', v)} placeholder="e.g. FC AFC Lean Mac" />
+                  </div>
+                  <div>
+                    <InputLabel>Dam (Mother)</InputLabel>
+                    <FieldInput value={form.pedigree.dam_name} onChange={(v) => updatePedigree('dam_name', v)} placeholder="e.g. Trumarc's Zip Code MH" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <InputLabel>Registration Number</InputLabel>
+                    <FieldInput value={form.pedigree.reg_number} onChange={(v) => updatePedigree('reg_number', v)} placeholder="e.g. SR12345678" />
+                  </div>
+                  <div>
+                    <InputLabel>Registration Organization</InputLabel>
+                    <FieldSelect value={form.pedigree.reg_org} onChange={(v) => updatePedigree('reg_org', v)}>
+                      <option value="">Select org</option>
+                      <option value="AKC">AKC</option>
+                      <option value="FDSB">FDSB</option>
+                      <option value="UKC">UKC</option>
+                      <option value="NAVHDA">NAVHDA</option>
+                      <option value="CKC">CKC</option>
+                      <option value="Other">Other</option>
+                    </FieldSelect>
+                  </div>
+                </div>
+                <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 8, marginTop: 16 }}>Grandparents (optional)</p>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <InputLabel>Sire&apos;s Sire</InputLabel>
+                    <FieldInput value={form.pedigree.sire_sire_name} onChange={(v) => updatePedigree('sire_sire_name', v)} placeholder="Paternal grandsire" />
+                  </div>
+                  <div>
+                    <InputLabel>Sire&apos;s Dam</InputLabel>
+                    <FieldInput value={form.pedigree.sire_dam_name} onChange={(v) => updatePedigree('sire_dam_name', v)} placeholder="Paternal granddam" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <InputLabel>Dam&apos;s Sire</InputLabel>
+                    <FieldInput value={form.pedigree.dam_sire_name} onChange={(v) => updatePedigree('dam_sire_name', v)} placeholder="Maternal grandsire" />
+                  </div>
+                  <div>
+                    <InputLabel>Dam&apos;s Dam</InputLabel>
+                    <FieldInput value={form.pedigree.dam_dam_name} onChange={(v) => updatePedigree('dam_dam_name', v)} placeholder="Maternal granddam" />
+                  </div>
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <InputLabel>State *</InputLabel>
@@ -583,19 +711,24 @@ export default function SellPage() {
                   style={{ display: 'none' }}
                 />
                 <div
-                  onClick={() => !uploading && form.images.length < MAX_PHOTOS && fileInputRef.current?.click()}
+                  onClick={() => !uploading && form.images.length < planMaxPhotos && fileInputRef.current?.click()}
                   onDragOver={(e) => { e.preventDefault() }}
                   onDrop={(e) => { e.preventDefault(); if (!uploading) handleFiles(e.dataTransfer.files) }}
                   className="flex flex-col items-center justify-center py-16 mt-2"
-                  style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading || form.images.length >= MAX_PHOTOS ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+                  style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading || form.images.length >= planMaxPhotos ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
                 >
                   <div style={{ fontSize: 36, opacity: 0.25, marginBottom: 12 }}>📷</div>
                   <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#0F0F0E', marginBottom: 4 }}>
-                    {uploading ? 'Uploading…' : form.images.length >= MAX_PHOTOS ? 'Photo limit reached' : 'Drop photos here or click to upload'}
+                    {uploading ? 'Uploading…' : form.images.length >= planMaxPhotos ? 'Photo limit reached' : 'Drop photos here or click to upload'}
                   </p>
                   <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E' }}>
-                    Up to {MAX_PHOTOS} photos · JPG, PNG, WEBP · Max 5MB each · {form.images.length}/{MAX_PHOTOS} added
+                    Up to {planMaxPhotos} photo{planMaxPhotos === 1 ? '' : 's'} · JPG, PNG, WEBP · Max 5MB each · {form.images.length}/{planMaxPhotos} added
                   </p>
+                  {planMaxPhotos < 20 && (
+                    <p style={{ ...sans, fontWeight: 400, fontSize: 12, color: '#D85A1C', marginTop: 6 }}>
+                      {PLANS[userTier].name} plan — <a href="/upgrade" style={{ color: '#D85A1C', textDecoration: 'underline' }}>upgrade for more photos</a>
+                    </p>
+                  )}
                 </div>
                 {error && step === 2 && (
                   <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#B03A1F', marginTop: 8 }}>{error}</p>
@@ -741,7 +874,10 @@ export default function SellPage() {
                   { label: 'Health Certs', value: [...form.health_certs, ...splitOther(form.health_cert_other)].join(', ') || 'None' },
                   { label: 'Hunt Titles', value: [...form.hunt_titles, ...splitOther(form.hunt_title_other)].join(', ') || 'None' },
                   { label: 'Paperwork Files', value: form.documents.length > 0 ? `${form.documents.length} file${form.documents.length === 1 ? '' : 's'} attached` : 'None' },
-                  { label: 'Pedigree', value: form.pedigree_url ? 'Uploaded' : 'Not uploaded' },
+                  { label: 'Pedigree Doc', value: form.pedigree_url ? 'Uploaded' : 'Not uploaded' },
+                  { label: 'Sire', value: form.pedigree.sire_name || '—' },
+                  { label: 'Dam', value: form.pedigree.dam_name || '—' },
+                  { label: 'Reg #', value: form.pedigree.reg_number ? `${form.pedigree.reg_number}${form.pedigree.reg_org ? ` (${form.pedigree.reg_org})` : ''}` : '—' },
                 ].map(({ label, value }) => (
                   <div key={label} className="flex gap-4 py-3" style={{ borderBottom: '1px solid #EFE7D4' }}>
                     <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', width: 120, flexShrink: 0 }}>{label}</span>

@@ -1,21 +1,23 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createClient } from '@/lib/supabase/server'
-import type { PlanId } from '@/lib/plans'
+import { PAID_PLAN_ORDER, type PlanId } from '@/lib/plans'
 
 // Price IDs land in env once the Stripe account decision is made.
-const PRICE_ENV: Record<PlanId, string | undefined> = {
+const PRICE_ENV: Partial<Record<PlanId, string | undefined>> = {
   basic: process.env.STRIPE_PRICE_GDE_BASIC,
   pro: process.env.STRIPE_PRICE_GDE_PRO,
   kennel: process.env.STRIPE_PRICE_GDE_KENNEL,
 }
 
+const PAID_IDS = new Set(PAID_PLAN_ORDER)
+
 export async function POST(req: Request) {
   let plan: PlanId = 'pro'
   try {
     const body = await req.clone().json()
-    if (body?.plan === 'basic' || body?.plan === 'pro' || body?.plan === 'kennel') plan = body.plan
-  } catch { /* no body → default pro */ }
+    if (body?.plan && PAID_IDS.has(body.plan)) plan = body.plan as PlanId
+  } catch { /* no body -> default pro */ }
 
   const secret = process.env.STRIPE_SECRET_KEY
   const priceId = PRICE_ENV[plan]
@@ -57,7 +59,6 @@ export async function POST(req: Request) {
     allow_promotion_codes: true,
     subscription_data: {
       metadata: { supabase_user_id: user.id, tier: plan },
-      ...(plan === 'basic' ? { trial_period_days: 30 } : {}),
     },
   })
 

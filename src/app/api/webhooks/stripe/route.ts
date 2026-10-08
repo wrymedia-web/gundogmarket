@@ -35,7 +35,10 @@ export async function POST(req: Request) {
     const userId = (sub.metadata?.supabase_user_id as string) || null
     if (!userId) return
     const status = sub.status
-    const paidTier = (sub.metadata?.tier as string) || 'pro'
+    const rawTier = (sub.metadata?.tier as string) || 'pro'
+    // Only recognize valid paid tiers
+    const validPaid = ['basic', 'pro', 'kennel']
+    const paidTier = validPaid.includes(rawTier) ? rawTier : 'pro'
     const tier = status === 'active' || status === 'trialing' ? paidTier : 'free'
     // Stripe API returns period end as a Unix timestamp on the first item
     const periodEndUnix = (sub.items?.data?.[0] as unknown as { current_period_end?: number })?.current_period_end
@@ -46,6 +49,26 @@ export async function POST(req: Request) {
       stripe_subscription_id: sub.id,
       subscription_current_period_end: periodEnd,
     }).eq('id', userId)
+
+    // When subscription is canceled/expired, enforce free-tier limits on published listings.
+    // Retain all listings and media but deactivate any beyond the free cap (1 listing).
+    if (tier === 'free') {
+      // Get all active listings for this user, ordered oldest first (keep the oldest one)
+      const { data: activeDogs } = await supabase
+        .from('dogs')
+        .select('id')
+        .eq('seller_id', userId)
+        .eq('status', 'active')
+        .order('created_at', { ascending: true })
+      if (activeDogs && activeDogs.length > 1) {
+        // Keep the first listing active, deactivate the rest (mark as draft to retain)
+        const toDeactivate = activeDogs.slice(1).map((d: { id: string }) => d.id)
+        await supabase
+          .from('dogs')
+          .update({ status: 'draft' })
+          .in('id', toDeactivate)
+      }
+    }
   }
 
   switch (event.type) {

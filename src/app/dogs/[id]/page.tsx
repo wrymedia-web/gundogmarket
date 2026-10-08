@@ -8,7 +8,7 @@ import {
   TRAINING_LEVEL_LABELS,
   type TrainingLevel,
 } from '@/lib/mock-data'
-import { MapPin, Star, ShieldCheck, CheckCircle, Phone, MessageCircle, Trophy } from 'lucide-react'
+import { MapPin, Star, ShieldCheck, CheckCircle, Phone, MessageCircle, Trophy, FileText } from 'lucide-react'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -26,6 +26,103 @@ const SC: React.CSSProperties = {
   letterSpacing: '0.16em',
   textTransform: 'uppercase',
   fontStyle: 'normal',
+}
+
+interface PedigreeData {
+  sire_name?: string
+  dam_name?: string
+  reg_number?: string
+  reg_org?: string
+  sire_sire_name?: string
+  sire_dam_name?: string
+  dam_sire_name?: string
+  dam_dam_name?: string
+}
+
+function PedigreeSection({ pedigree, pedigreeUrl }: { pedigree: PedigreeData | null; pedigreeUrl: string | null }) {
+  const p = pedigree as PedigreeData | null
+  const hasPedigree = p && Object.values(p).some((v) => v && String(v).trim() !== '')
+  if (!hasPedigree && !pedigreeUrl) return null
+
+  return (
+    <div className="mb-6">
+      <h2 style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12 }}>Pedigree</h2>
+      <div style={{ width: 32, height: 2, background: '#D85A1C', marginBottom: 16 }} />
+
+      {hasPedigree && (
+        <div className="p-5 mb-4" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6' }}>
+          {(p?.reg_number || p?.reg_org) && (
+            <div className="mb-4 pb-3" style={{ borderBottom: '1px solid #D9C8A6' }}>
+              <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 4 }}>Registration</p>
+              <p style={{ ...sans, fontWeight: 600, fontSize: 15, color: '#0F0F0E' }}>
+                {[p.reg_org, p.reg_number].filter(Boolean).join(' — ')}
+              </p>
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-6">
+            {p?.sire_name && (
+              <div>
+                <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D85A1C', marginBottom: 4 }}>Sire (Father)</p>
+                <p style={{ ...sans, fontWeight: 600, fontSize: 15, color: '#0F0F0E' }}>{p.sire_name}</p>
+                {(p.sire_sire_name || p.sire_dam_name) && (
+                  <div className="mt-3 pl-3" style={{ borderLeft: '2px solid #D9C8A6' }}>
+                    {p.sire_sire_name && (
+                      <div className="mb-2">
+                        <p style={{ ...sans, fontWeight: 700, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 2 }}>Sire&apos;s Sire</p>
+                        <p style={{ ...sans, fontWeight: 500, fontSize: 13, color: '#0F0F0E' }}>{p.sire_sire_name}</p>
+                      </div>
+                    )}
+                    {p.sire_dam_name && (
+                      <div>
+                        <p style={{ ...sans, fontWeight: 700, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 2 }}>Sire&apos;s Dam</p>
+                        <p style={{ ...sans, fontWeight: 500, fontSize: 13, color: '#0F0F0E' }}>{p.sire_dam_name}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {p?.dam_name && (
+              <div>
+                <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D85A1C', marginBottom: 4 }}>Dam (Mother)</p>
+                <p style={{ ...sans, fontWeight: 600, fontSize: 15, color: '#0F0F0E' }}>{p.dam_name}</p>
+                {(p.dam_sire_name || p.dam_dam_name) && (
+                  <div className="mt-3 pl-3" style={{ borderLeft: '2px solid #D9C8A6' }}>
+                    {p.dam_sire_name && (
+                      <div className="mb-2">
+                        <p style={{ ...sans, fontWeight: 700, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 2 }}>Dam&apos;s Sire</p>
+                        <p style={{ ...sans, fontWeight: 500, fontSize: 13, color: '#0F0F0E' }}>{p.dam_sire_name}</p>
+                      </div>
+                    )}
+                    {p.dam_dam_name && (
+                      <div>
+                        <p style={{ ...sans, fontWeight: 700, fontSize: 8, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 2 }}>Dam&apos;s Dam</p>
+                        <p style={{ ...sans, fontWeight: 500, fontSize: 13, color: '#0F0F0E' }}>{p.dam_dam_name}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {pedigreeUrl && (
+        <a
+          href={pedigreeUrl}
+          target="_blank"
+          rel="noopener"
+          className="inline-flex items-center gap-2 px-4 py-3"
+          style={{ background: '#FEF3C7', border: '1px solid #FDE68A', ...sans, fontWeight: 600, fontSize: 13, color: '#92400E', textDecoration: 'none' }}
+        >
+          <FileText size={14} style={{ color: '#92400E' }} /> View Full Pedigree Document
+        </a>
+      )}
+    </div>
+  )
 }
 
 // Dynamic — listings can be created after build
@@ -154,6 +251,21 @@ export default async function DogProfilePage({
                   </div>
                 </div>
               )}
+
+              {dog.registrations && (dog.registrations as string[]).length > 0 && (
+                <div className="mb-6">
+                  <h2 style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12 }}>Registrations</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {(dog.registrations as string[]).map((reg: string) => (
+                      <div key={reg} className="flex items-center gap-2 px-3 py-2" style={{ background: '#EDE9FE', border: '1px solid #C4B5FD', ...sans, fontWeight: 400, fontSize: 13, color: '#5B21B6' }}>
+                        <FileText size={11} style={{ color: '#5B21B6' }} /> {reg}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <PedigreeSection pedigree={dog.pedigree} pedigreeUrl={dog.pedigree_url} />
             </div>
           </div>
 
