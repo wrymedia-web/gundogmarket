@@ -145,9 +145,13 @@ export default async function DogProfilePage({
 
   const { data: sellerProfile } = await supabase
     .from('profiles')
-    .select('full_name, kennel_name, location_state, location_city, rating, review_count, verified, breeder_pro')
+    .select('full_name, kennel_name, location_state, location_city, rating, review_count, verified, breeder_pro, subscription_tier, subscription_status')
     .eq('id', dogRow.seller_id)
     .maybeSingle()
+
+  const sellerTier = (sellerProfile?.subscription_status === 'active' || sellerProfile?.subscription_status === 'trialing')
+    ? (sellerProfile?.subscription_tier ?? 'free')
+    : 'free'
 
   const dog = {
     ...dogRow,
@@ -160,6 +164,7 @@ export default async function DogProfilePage({
       review_count: sellerProfile?.review_count ?? 0,
       verified: sellerProfile?.verified ?? false,
       breeder_pro: sellerProfile?.breeder_pro ?? false,
+      tier: sellerTier,
     },
   }
 
@@ -305,9 +310,9 @@ export default async function DogProfilePage({
                 <div style={{ width: 40, height: 40, background: '#EFE7D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🐾</div>
               </div>
 
-              {dog.seller.breeder_pro && (
+              {(dog.seller.tier === 'kennel' || dog.seller.tier === 'pro') && (
                 <div className="mb-4 px-3 py-2 flex items-center gap-2" style={{ background: '#FEF3C7', border: '1px solid #FDE68A', ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#92400E' }}>
-                  <Trophy size={11} style={{ color: '#92400E' }} /> Breeder Pro Seller
+                  <Trophy size={11} style={{ color: '#92400E' }} /> {dog.seller.tier === 'kennel' ? 'Kennel Elite Seller' : 'Pro Seller'}
                 </div>
               )}
 

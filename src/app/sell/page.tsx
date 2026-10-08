@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar'
 import { ALL_BREEDS, US_STATES } from '@/lib/mock-data'
@@ -206,21 +206,23 @@ export default function SellPage() {
   const planMaxVideos = PLANS[userTier].maxVideos
 
   // Load user's subscription tier on mount
-  useState(() => {
+  useEffect(() => {
+    let mounted = true
     ;(async () => {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { setTierLoaded(true); return }
+      if (!user || !mounted) { setTierLoaded(true); return }
       const { data: profile } = await supabase
         .from('profiles')
         .select('subscription_tier, subscription_status')
         .eq('id', user.id)
         .maybeSingle()
-      if (profile) {
+      if (mounted && profile) {
         setUserTier(effectiveTier(profile.subscription_tier, profile.subscription_status))
       }
-      setTierLoaded(true)
+      if (mounted) setTierLoaded(true)
     })()
-  })
+    return () => { mounted = false }
+  }, [supabase])
 
   function update(key: keyof FormData, value: string | string[]) {
     setForm((prev) => ({ ...prev, [key]: value }))
@@ -753,9 +755,23 @@ export default function SellPage() {
                 )}
               </div>
               <div>
-                <InputLabel>Video URL (optional)</InputLabel>
-                <FieldInput value={form.video_url} onChange={(v) => update('video_url', v)} placeholder="https://youtube.com/watch?v=..." />
-                <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginTop: 6 }}>YouTube, Vimeo, or any video link showing the dog in action</p>
+                <InputLabel>Video URL {planMaxVideos > 0 ? '(optional)' : ''}</InputLabel>
+                {planMaxVideos > 0 ? (
+                  <>
+                    <FieldInput value={form.video_url} onChange={(v) => update('video_url', v)} placeholder="https://youtube.com/watch?v=..." />
+                    <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E', marginTop: 6 }}>
+                      YouTube, Vimeo, or any video link showing the dog in action
+                      {userTier === 'kennel' ? ` — up to ${planMaxVideos} videos per listing` : ''}
+                    </p>
+                  </>
+                ) : (
+                  <div className="px-4 py-4 mt-2" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6' }}>
+                    <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E' }}>
+                      Video uploads are available on Pro ($24.99/mo) and Kennel Elite ($59.99/mo) plans.
+                    </p>
+                    <a href="/upgrade" style={{ ...sans, fontWeight: 700, fontSize: 12, color: '#D85A1C', textDecoration: 'underline', display: 'inline-block', marginTop: 6 }}>Upgrade to add video</a>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -903,7 +919,11 @@ export default function SellPage() {
               >
                 {publishing ? 'Publishing…' : 'Publish Listing →'}
               </button>
-              <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E', textAlign: 'center', marginTop: 12 }}>Free listing — no credit card required</p>
+              <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E', textAlign: 'center', marginTop: 12 }}>
+                {userTier === 'free'
+                  ? 'Free listing — active for 14 days, no credit card required'
+                  : `${PLANS[userTier].name} plan — listing active while subscribed`}
+              </p>
             </div>
           )}
         </div>

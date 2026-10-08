@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Navbar from '@/components/navbar'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle } from 'lucide-react'
-import { PLANS, PLAN_ORDER, type PlanId } from '@/lib/plans'
+import { PLANS, PLAN_ORDER, PAID_PLAN_ORDER, effectiveTier, type PlanId } from '@/lib/plans'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -32,7 +32,7 @@ function UpgradePageInner() {
   const supabase = createClient()
   const [loadingPlan, setLoadingPlan] = useState<PlanId | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [currentTier, setCurrentTier] = useState<string | null>(null)
+  const [currentTier, setCurrentTier] = useState<PlanId>('free')
   const canceled = params.get('canceled') === '1'
   const highlight = (params.get('plan') as PlanId | null) ?? 'pro'
 
@@ -45,14 +45,15 @@ function UpgradePageInner() {
         .select('subscription_tier, subscription_status')
         .eq('id', user.id)
         .maybeSingle()
-      if (mounted && data?.subscription_status === 'active' && data?.subscription_tier) {
-        setCurrentTier(data.subscription_tier)
+      if (mounted && data) {
+        setCurrentTier(effectiveTier(data.subscription_tier, data.subscription_status))
       }
     })
     return () => { mounted = false }
   }, [supabase])
 
   async function startCheckout(plan: PlanId) {
+    if (plan === 'free') return // Free doesn't need checkout
     setError(null)
     setLoadingPlan(plan)
     try {
@@ -80,37 +81,41 @@ function UpgradePageInner() {
   return (
     <div style={{ background: '#EFE7D4', minHeight: '100vh' }}>
       <Navbar />
-      <div className="max-w-5xl mx-auto px-6 py-20">
+      <div className="max-w-6xl mx-auto px-6 py-20">
         <div className="text-center mb-14">
           <h1 style={{ ...display, fontSize: 40, color: '#0F0F0E', marginBottom: 12 }}>
             Pick Your Plan
           </h1>
           <p style={{ ...sans, fontWeight: 400, fontSize: 17, color: '#7C7A6E', lineHeight: 1.6 }}>
-            Every plan starts with a listing in front of serious buyers. Cancel any time.
+            Start free — no credit card required. Upgrade anytime for more listings, photos, and features.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {PLAN_ORDER.map((planId) => {
             const p = PLANS[planId]
             const featured = planId === highlight
             const isCurrent = currentTier === planId
             const busy = loadingPlan === planId
+            const isFree = planId === 'free'
             return (
-              <div key={p.id} style={{ background: featured ? '#0F0F0E' : 'white', border: `1px solid ${featured ? '#D85A1C' : '#D9C8A6'}`, padding: 32, display: 'flex', flexDirection: 'column' }}>
-                <div style={{ ...display, fontSize: 17, color: featured ? '#EFE7D4' : '#0F0F0E', marginBottom: 2 }}>{p.name}</div>
-                <div style={{ ...sans, fontSize: 11, fontWeight: 400, color: featured ? 'rgba(244,239,229,0.45)' : '#7C7A6E', marginBottom: 16 }}>{p.tagline}</div>
+              <div key={p.id} style={{ background: featured ? '#0F0F0E' : 'white', border: `1px solid ${featured ? '#D85A1C' : '#D9C8A6'}`, padding: 28, display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                {featured && (
+                  <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 14, alignSelf: 'flex-start' }}>Most Popular</div>
+                )}
+                <div style={{ ...display, fontSize: 16, color: featured ? '#EFE7D4' : '#0F0F0E', marginBottom: 2 }}>{p.name}</div>
+                <div style={{ ...sans, fontSize: 11, fontWeight: 400, color: featured ? 'rgba(244,239,229,0.45)' : '#7C7A6E', marginBottom: 14 }}>{p.tagline}</div>
                 <div className="flex items-baseline gap-2 mb-1">
-                  <span style={{ ...display, fontSize: 44, color: featured ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{p.price}</span>
-                  <span style={{ ...sans, fontSize: 13, color: featured ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{p.period}</span>
+                  <span style={{ ...display, fontSize: 38, color: featured ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{p.price}</span>
+                  {p.period && <span style={{ ...sans, fontSize: 13, color: featured ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{p.period}</span>}
                 </div>
-                <div style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', marginBottom: 20, minHeight: 14 }}>
-                  {p.trial ?? ''}
+                <div style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', marginBottom: 18, minHeight: 14 }}>
+                  {isFree ? 'No credit card required' : (p.trial ?? '')}
                 </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', flex: 1 }}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
                   {p.features.map((perk) => (
-                    <li key={perk} className="flex items-start gap-2.5 mb-2.5" style={{ ...sans, fontSize: 13, fontWeight: 400, color: featured ? 'rgba(244,239,229,0.7)' : '#0F0F0E', lineHeight: 1.5 }}>
-                      <CheckCircle size={16} style={{ color: '#D85A1C', flexShrink: 0, marginTop: 2 }} />
+                    <li key={perk} className="flex items-start gap-2.5 mb-2.5" style={{ ...sans, fontSize: 12, fontWeight: 400, color: featured ? 'rgba(244,239,229,0.7)' : '#0F0F0E', lineHeight: 1.5 }}>
+                      <CheckCircle size={14} style={{ color: '#D85A1C', flexShrink: 0, marginTop: 2 }} />
                       {perk}
                     </li>
                   ))}
@@ -119,6 +124,17 @@ function UpgradePageInner() {
                   <div style={{ background: featured ? 'rgba(244,239,229,0.08)' : '#EFE7D4', padding: 14, textAlign: 'center' }}>
                     <p style={{ ...sans, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em', color: featured ? '#EFE7D4' : '#0F0F0E' }}>Your current plan</p>
                   </div>
+                ) : isFree ? (
+                  <a
+                    href="/signup"
+                    style={{
+                      ...sans, fontWeight: 700, fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.08em',
+                      background: 'transparent', color: '#0F0F0E', border: '1px solid #0F0F0E', padding: '14px',
+                      display: 'block', textAlign: 'center', textDecoration: 'none', cursor: 'pointer',
+                    }}
+                  >
+                    {p.cta}
+                  </a>
                 ) : (
                   <button
                     onClick={() => startCheckout(p.id)}
@@ -147,7 +163,17 @@ function UpgradePageInner() {
           <p style={{ ...sans, fontSize: 13, color: '#B03A1F', textAlign: 'center', marginTop: 20 }}>{error}</p>
         )}
 
-        <p style={{ ...sans, fontSize: 12, color: '#7C7A6E', textAlign: 'center', marginTop: 32 }}>
+        {/* Litter note */}
+        <div className="text-center mt-10 px-4 py-6" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
+          <p style={{ ...sans, fontWeight: 700, fontSize: 13, color: '#0F0F0E', marginBottom: 4 }}>
+            A litter of puppies counts as one listing.
+          </p>
+          <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E' }}>
+            List your entire litter under a single listing regardless of how many puppies are available.
+          </p>
+        </div>
+
+        <p style={{ ...sans, fontSize: 12, color: '#7C7A6E', textAlign: 'center', marginTop: 24 }}>
           Payment secure via Stripe · Cancel any time from your account
         </p>
       </div>

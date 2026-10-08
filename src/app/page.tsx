@@ -175,8 +175,11 @@ export default function HomePage() {
             <h2 style={{ ...display, fontSize: 36, color: '#0F0F0E' }}>
               Start Free.<br /><span style={{ color: '#D85A1C' }}>Upgrade for More.</span>
             </h2>
+            <p style={{ ...sans, fontSize: 14, fontWeight: 400, color: '#7C7A6E', maxWidth: 520, margin: '12px auto 0' }}>
+              No credit card required to list. A litter of puppies counts as one listing.
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
             {PLAN_ORDER.map((planId) => {
               const p = PLANS[planId]
               const plan = {
@@ -186,23 +189,23 @@ export default function HomePage() {
                 trial: p.trial,
                 items: p.features,
                 cta: p.cta,
-                href: `/upgrade?plan=${p.id}`,
+                href: planId === 'free' ? '/signup' : `/upgrade?plan=${p.id}`,
                 dark: p.id === 'pro',
               }
               return (
-              <div key={plan.name} style={{ background: plan.dark ? '#0F0F0E' : 'white', border: `1px solid ${plan.dark ? '#D85A1C' : '#D9C8A6'}`, padding: '36px', display: 'flex', flexDirection: 'column' }}>
-                {plan.dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 16, alignSelf: 'flex-start' }}>Most Popular</div>}
-                <div style={{ ...display, fontSize: 18, color: plan.dark ? '#EFE7D4' : '#0F0F0E', marginBottom: 4 }}>{plan.name}</div>
+              <div key={plan.name} style={{ background: plan.dark ? '#0F0F0E' : 'white', border: `1px solid ${plan.dark ? '#D85A1C' : '#D9C8A6'}`, padding: '32px', display: 'flex', flexDirection: 'column' }}>
+                {plan.dark && <div style={{ ...sans, fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', background: '#D85A1C', color: 'white', display: 'inline-block', padding: '3px 10px', marginBottom: 14, alignSelf: 'flex-start' }}>Most Popular</div>}
+                <div style={{ ...display, fontSize: 16, color: plan.dark ? '#EFE7D4' : '#0F0F0E', marginBottom: 4 }}>{plan.name}</div>
                 <div className="flex items-baseline gap-2 mb-2">
-                  <span style={{ ...display, fontSize: 48, color: plan.dark ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{plan.price}</span>
-                  <span style={{ ...sans, fontSize: 13, color: plan.dark ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{plan.period}</span>
+                  <span style={{ ...display, fontSize: 40, color: plan.dark ? '#EFE7D4' : '#0F0F0E', lineHeight: 1 }}>{plan.price}</span>
+                  {plan.period && <span style={{ ...sans, fontSize: 13, color: plan.dark ? 'rgba(244,239,229,0.45)' : '#7C7A6E' }}>{plan.period}</span>}
                 </div>
-                <div style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', marginBottom: 20, minHeight: 14 }}>
-                  {plan.trial ?? ''}
+                <div style={{ ...sans, fontSize: 11, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#D85A1C', marginBottom: 18, minHeight: 14 }}>
+                  {planId === 'free' ? 'No credit card required' : (plan.trial ?? '')}
                 </div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', flex: 1 }}>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px', flex: 1 }}>
                   {plan.items.map((item) => (
-                    <li key={item} className="flex items-center gap-2.5 mb-2.5" style={{ ...sans, fontSize: 13, fontWeight: 400, color: plan.dark ? 'rgba(244,239,229,0.7)' : '#7C7A6E' }}>
+                    <li key={item} className="flex items-center gap-2.5 mb-2.5" style={{ ...sans, fontSize: 12, fontWeight: 400, color: plan.dark ? 'rgba(244,239,229,0.7)' : '#7C7A6E' }}>
                       <span style={{ color: '#D85A1C', fontWeight: 700 }}>✓</span> {item}
                     </li>
                   ))}
