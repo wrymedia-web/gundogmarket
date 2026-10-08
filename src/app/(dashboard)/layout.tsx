@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 
 const montserrat: React.CSSProperties = {
   fontFamily: "'Montserrat', var(--font-montserrat), system-ui, sans-serif",
@@ -15,11 +16,20 @@ const navItems = [
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
 ]
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Admin-only "Super Dashboard" shortcut
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  let isAdmin = false
+  if (user) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle()
+    isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin'
+  }
+
   return (
     <div className="min-h-screen flex flex-col md:flex-row" style={{ background: '#F4EFE5' }}>
       {/* Mobile top nav (sidebar is hidden below md) */}
@@ -41,6 +51,15 @@ export default function DashboardLayout({
               {item.icon} {item.label}
             </Link>
           ))}
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="px-3 py-2 text-xs font-bold whitespace-nowrap"
+              style={{ color: '#D4600A', ...inter }}
+            >
+              🛡️ Super Dashboard
+            </Link>
+          )}
         </nav>
       </div>
 
@@ -77,6 +96,15 @@ export default function DashboardLayout({
 
         {/* Bottom */}
         <div className="p-4" style={{ borderTop: '1px solid rgba(244,239,229,0.08)' }}>
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="flex items-center justify-center gap-2 px-4 py-3 mb-2 text-xs font-bold uppercase tracking-widest"
+              style={{ background: '#D4600A', color: 'white', ...inter, textDecoration: 'none' }}
+            >
+              🛡️ Super Dashboard
+            </Link>
+          )}
           <Link
             href="/"
             className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-widest"
