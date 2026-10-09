@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { Wordmark } from '@/components/navbar'
+import { fbTrack } from '@/components/meta-pixel'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -64,6 +65,7 @@ export default function SignupPage() {
       return
     }
 
+    fbTrack('CompleteRegistration')
     setSuccess(true)
     setLoading(false)
   }

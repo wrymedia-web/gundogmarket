@@ -11,6 +11,7 @@ import {
 import { MapPin, CheckCircle, Trophy } from 'lucide-react'
 import ContactSeller from '@/components/contact-seller'
 import PhotoGallery from '@/components/photo-gallery'
+import ViewContentTracker from '@/components/view-content-tracker'
 
 const display: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -96,6 +97,7 @@ export default async function DogProfilePage({
   return (
     <div style={{ background: '#EFE7D4', minHeight: '100vh' }}>
       <Navbar />
+      <ViewContentTracker id={dog.id} name={dog.title} value={(dog.price ?? 0) / 100} />
 
       {/* Breadcrumb */}
       <div className="px-6 py-3" style={{ background: '#0F0F0E', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>

@@ -6,6 +6,7 @@ import { Suspense } from 'react'
 import Navbar from '@/components/navbar'
 import { createClient } from '@/lib/supabase/client'
 import { PLANS } from '@/lib/plans'
+import { fbTrack } from '@/components/meta-pixel'
 import { CheckCircle } from 'lucide-react'
 
 const display: React.CSSProperties = {
@@ -60,6 +61,7 @@ function PricingInner() {
         setError(json.error || 'Checkout is not available right now.')
         return
       }
+      fbTrack('InitiateCheckout', { content_name: trial ? 'trial' : plan, value: PLANS[plan].priceCents / 100, currency: 'USD' })
       window.location.href = json.url
     } finally {
       setBusy(null)

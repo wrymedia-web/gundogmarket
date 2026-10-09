@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { MessageCircle } from 'lucide-react'
+import { fbTrack } from '@/components/meta-pixel'
 
 const sans: React.CSSProperties = {
   fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif",
@@ -59,6 +60,7 @@ export default function ContactSeller({ dogId, sellerId }: { dogId: string; sell
         .insert({ conversation_id: conv.id, sender_id: user.id, body: message.trim() })
       if (msgErr) throw msgErr
 
+      fbTrack('Lead', { content_ids: [dogId] })
       setSent(true)
       setMessage('')
     } catch (err: unknown) {
