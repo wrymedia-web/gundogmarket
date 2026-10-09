@@ -180,6 +180,26 @@ export default async function DogProfilePage({
                   </div>
                 </div>
               )}
+
+              {(dog.pedigree_url || (dog.documents as { name: string; url: string }[] | null)?.length) ? (
+                <div className="mb-2">
+                  <h2 style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12 }}>Pedigree &amp; Paperwork</h2>
+                  <div className="flex flex-col gap-2">
+                    {dog.pedigree_url && (
+                      <a href={dog.pedigree_url} target="_blank" rel="noopener" className="flex items-center gap-3 px-4 py-3" style={{ background: '#FEF3C7', border: '1px solid #D85A1C', ...sans, fontWeight: 700, fontSize: 13, color: '#0F0F0E', textDecoration: 'none' }}>
+                        🐕 View Pedigree
+                        <span style={{ ...sans, fontWeight: 400, fontSize: 11, color: '#92400E', marginLeft: 'auto' }}>opens full size</span>
+                      </a>
+                    )}
+                    {((dog.documents as { name: string; url: string }[]) ?? []).map((doc) => (
+                      <a key={doc.url} href={doc.url} target="_blank" rel="noopener" className="flex items-center gap-3 px-4 py-3" style={{ background: 'white', border: '1px solid #D9C8A6', ...sans, fontWeight: 400, fontSize: 13, color: '#0F0F0E', textDecoration: 'none' }}>
+                        📄 {doc.name}
+                        <span style={{ ...sans, fontWeight: 400, fontSize: 11, color: '#7C7A6E', marginLeft: 'auto' }}>view</span>
+                      </a>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
 
