@@ -38,7 +38,7 @@ export default function TermsPage() {
           </Section>
 
           <Section title="4. Transactions">
-            GunDog Exchange is a listing and communication platform. All transactions — including price negotiation, payment, and delivery — are between the buyer and seller. We do not handle payments, hold funds, or provide escrow services. We are not a party to any sale.
+            GunDog Exchange is a listing and communication platform. All transactions — including price negotiation, payment, and delivery — are between the buyer and seller. We do not handle transaction payments, hold funds, or act as an intermediary between buyers and sellers. We are not a party to any sale.
           </Section>
 
           <Section title="5. Subscriptions">
