@@ -88,7 +88,7 @@ export default async function AdminListingsPage({ searchParams }: { searchParams
                       {imgs && imgs.length > 0 ? (
                         <img src={imgs[0]} alt="" style={{ width: 44, height: 44, objectFit: 'cover', border: '1px solid #D9C8A6' }} />
                       ) : (
-                        <div style={{ width: 44, height: 44, background: '#EFE7D4', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, border: '1px solid #D9C8A6' }}>🐕</div>
+                        <div style={{ width: 44, height: 44, background: '#EFE7D4', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #D9C8A6' }}><img src="/gsp-icon.png" alt="" style={{ width: 30 }} /></div>
                       )}
                     </td>
                     <td style={{ padding: '8px 12px' }}>

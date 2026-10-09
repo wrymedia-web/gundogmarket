@@ -10,7 +10,7 @@ const inter: React.CSSProperties = {
 }
 
 const navItems = [
-  { label: 'My Listings', href: '/dashboard', icon: '🐕' },
+  { label: 'My Listings', href: '/dashboard', icon: 'gsp' },
   { label: 'Messages', href: '/dashboard/messages', icon: '💬' },
   { label: 'Profile', href: '/dashboard/profile', icon: '👤' },
   { label: 'Settings', href: '/dashboard/settings', icon: '⚙️' },
@@ -48,7 +48,7 @@ export default async function DashboardLayout({
               className="px-3 py-2 text-xs font-semibold whitespace-nowrap"
               style={{ color: 'rgba(244,239,229,0.8)', ...inter }}
             >
-              {item.icon} {item.label}
+              {item.icon === 'gsp' ? <img src="/gsp-icon.png" alt="" style={{ width: 16, display: 'inline-block', verticalAlign: 'middle', marginRight: 4 }} /> : item.icon + ' '}{item.label}
             </Link>
           ))}
           {isAdmin && (
@@ -88,7 +88,7 @@ export default async function DashboardLayout({
               className="flex items-center gap-3 px-4 py-3 mb-1 text-sm font-semibold transition-colors"
               style={{ color: 'rgba(244,239,229,0.7)', ...inter }}
             >
-              <span>{item.icon}</span>
+              <span>{item.icon === 'gsp' ? <img src="/gsp-icon.png" alt="" style={{ width: 20, display: 'inline-block' }} /> : item.icon}</span>
               {item.label}
             </Link>
           ))}

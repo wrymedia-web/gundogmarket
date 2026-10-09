@@ -117,7 +117,7 @@ export default async function DogProfilePage({
             ) : (
               <div className="w-full mb-6 flex items-center justify-center" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6', height: 400 }}>
                 <div className="text-center">
-                  <div style={{ fontSize: 72, opacity: 0.2 }}>🐕</div>
+                  <img src="/gsp-icon.png" alt="" style={{ width: 72, opacity: 0.35, display: 'inline-block' }} />
                   <p style={{ ...sans, fontWeight: 400, color: '#7C7A6E', fontSize: 15, marginTop: 8 }}>No photos yet</p>
                 </div>
               </div>
@@ -187,7 +187,7 @@ export default async function DogProfilePage({
                   <div className="flex flex-col gap-2">
                     {dog.pedigree_url && (
                       <a href={dog.pedigree_url} target="_blank" rel="noopener" className="flex items-center gap-3 px-4 py-3" style={{ background: '#FEF3C7', border: '1px solid #D85A1C', ...sans, fontWeight: 700, fontSize: 13, color: '#0F0F0E', textDecoration: 'none' }}>
-                        🐕 View Pedigree
+                        <img src="/gsp-icon.png" alt="" style={{ width: 22, verticalAlign: 'middle' }} /> View Pedigree
                         <span style={{ ...sans, fontWeight: 400, fontSize: 11, color: '#92400E', marginLeft: 'auto' }}>opens full size</span>
                       </a>
                     )}

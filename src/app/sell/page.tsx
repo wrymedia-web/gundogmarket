@@ -771,7 +771,7 @@ export default function SellPage() {
                 />
                 {form.pedigree_url ? (
                   <div className="flex items-center gap-3 px-4 py-4" style={{ border: '1px solid #D85A1C', background: '#FEF3C7' }}>
-                    <span style={{ fontSize: 22 }}>🐕</span>
+                    <img src="/gsp-icon.png" alt="" style={{ width: 26 }} />
                     <a href={form.pedigree_url} target="_blank" rel="noopener" style={{ ...sans, fontWeight: 700, fontSize: 14, color: '#0F0F0E', textDecoration: 'underline', flex: 1 }}>Pedigree uploaded — view</a>
                     <button
                       type="button"
@@ -797,7 +797,7 @@ export default function SellPage() {
                     className="flex flex-col items-center justify-center py-12"
                     style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
                   >
-                    <div style={{ fontSize: 32, opacity: 0.25, marginBottom: 10 }}>🐕</div>
+                    <img src="/gsp-icon.png" alt="" style={{ width: 44, opacity: 0.35, marginBottom: 10 }} />
                     <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#0F0F0E', marginBottom: 4 }}>
                       {uploading ? 'Uploading…' : 'Drop pedigree here or click to upload'}
                     </p>

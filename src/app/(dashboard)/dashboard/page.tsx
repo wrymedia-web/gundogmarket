@@ -50,14 +50,14 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-10">
         {[
-          { label: 'Active Listings', value: String(activeCount), icon: '🐕' },
+          { label: 'Active Listings', value: String(activeCount), icon: 'gsp' },
           { label: 'Total Listings', value: String(myDogs?.length ?? 0), icon: '📋' },
           { label: 'Messages', value: unreadCount ? `${unreadCount} new` : String(inboxCount ?? 0), icon: '💬', href: '/dashboard/messages' },
         ].map((stat) => {
           const inner = (
             <div className="p-6 flex items-center gap-4" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
               <div className="w-12 h-12 flex items-center justify-center text-2xl" style={{ background: '#F4EFE5' }}>
-                {stat.icon}
+                {stat.icon === 'gsp' ? <img src="/gsp-icon.png" alt="" style={{ width: 28, display: 'inline-block' }} /> : stat.icon}
               </div>
               <div>
                 <div className="text-2xl font-black" style={{ ...montserrat, color: unreadCount && stat.href ? '#D4600A' : '#0E0E0E' }}>
