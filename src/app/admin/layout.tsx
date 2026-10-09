@@ -14,6 +14,7 @@ const navItems = [
   { label: 'Subscriptions', href: '/admin/subscriptions' },
   { label: 'Payments', href: '/admin/payments' },
   { label: 'Messages', href: '/admin/messages' },
+  { label: 'Analytics', href: '/admin/analytics' },
   { label: 'Activity Log', href: '/admin/activity' },
   { label: 'Settings', href: '/admin/settings' },
   { label: 'Security (MFA)', href: '/admin/security' },
