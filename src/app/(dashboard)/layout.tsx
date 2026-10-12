@@ -20,10 +20,10 @@ export default function DashboardLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen flex" style={{ background: '#F4EFE5' }}>
+    <div className="min-h-screen flex flex-col md:flex-row" style={{ background: '#F4EFE5' }}>
       {/* Sidebar */}
       <aside
-        className="w-64 shrink-0 flex flex-col"
+        className="w-full md:w-64 shrink-0 flex flex-col"
         style={{ background: '#0E0E0E', borderRight: '2px solid #D4600A' }}
       >
         {/* Logo */}
@@ -38,12 +38,12 @@ export default function DashboardLayout({
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 p-4">
+        <nav className="flex md:flex-col md:flex-1 p-2 md:p-4 overflow-x-auto gap-1">
           {navItems.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="flex items-center gap-3 px-4 py-3 mb-1 text-sm font-semibold transition-colors"
+              className="flex items-center gap-2 md:gap-3 px-3 md:px-4 py-2 md:py-3 mb-0 md:mb-1 text-sm font-semibold transition-colors whitespace-nowrap"
               style={{ color: 'rgba(244,239,229,0.7)', ...inter }}
             >
               <span>{item.icon}</span>
@@ -53,7 +53,7 @@ export default function DashboardLayout({
         </nav>
 
         {/* Bottom */}
-        <div className="p-4" style={{ borderTop: '1px solid rgba(244,239,229,0.08)' }}>
+        <div className="hidden md:block p-4" style={{ borderTop: '1px solid rgba(244,239,229,0.08)' }}>
           <Link
             href="/"
             className="flex items-center gap-2 px-4 py-3 text-xs font-semibold uppercase tracking-widest"
@@ -83,7 +83,7 @@ export default function DashboardLayout({
           </div>
         </div>
 
-        <div className="p-8">
+        <div className="p-4 sm:p-8">
           {children}
         </div>
       </main>

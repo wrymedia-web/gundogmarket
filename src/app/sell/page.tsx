@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Navbar from '@/components/navbar'
-import { ALL_BREEDS, US_STATES } from '@/lib/mock-data'
+import { ALL_BREEDS, US_STATES, formatAge } from '@/lib/mock-data'
 import { PLANS, listingCap, photoCap, videoCap, effectiveTier, type PlanId } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
 import { CheckCircle, X } from 'lucide-react'
@@ -94,7 +94,8 @@ interface PedigreeData {
 interface FormData {
   breed: string
   name: string
-  age_months: string
+  age_years: string
+  age_months_part: string
   gender: string
   training_level: string
   price: string
@@ -128,7 +129,8 @@ const defaultPedigree: PedigreeData = {
 const defaultForm: FormData = {
   breed: '',
   name: '',
-  age_months: '',
+  age_years: '',
+  age_months_part: '',
   gender: '',
   training_level: '',
   price: '',
@@ -398,7 +400,9 @@ export default function SellPage() {
         : null
 
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
-      const ageMonths = form.age_months ? parseInt(form.age_months, 10) : null
+      const yrs = form.age_years !== '' ? parseInt(form.age_years, 10) : NaN
+      const mos = form.age_months_part !== '' ? parseInt(form.age_months_part, 10) : NaN
+      const ageMonths = (!isNaN(yrs) || !isNaN(mos)) ? ((isNaN(yrs) ? 0 : yrs) * 12 + (isNaN(mos) ? 0 : mos)) : null
       const title = form.name ? `${form.name} — ${form.breed}` : form.breed
       const hasPedigree = Object.values(form.pedigree).some((v) => v.trim() !== '')
       const { error: insertErr } = await supabase.from('dogs').insert({
@@ -474,7 +478,7 @@ export default function SellPage() {
       <Navbar />
 
       {/* Header */}
-      <div className="px-6 py-12" style={{ background: '#0F0F0E', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="px-4 sm:px-6 py-8 sm:py-12" style={{ background: '#0F0F0E', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
         <div className="max-w-3xl mx-auto">
           <div style={{ ...SC, fontSize: 10, color: 'rgba(244,239,229,0.55)', marginBottom: 12 }}>New Listing</div>
           <h1 style={{ ...display, fontSize: 40, color: '#EFE7D4', marginBottom: 8 }}>Post a Listing</h1>
@@ -482,7 +486,7 @@ export default function SellPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto px-6 py-10">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Step indicator */}
         <div className="flex items-center mb-10">
           {STEPS.map((label, i) => (
@@ -507,7 +511,7 @@ export default function SellPage() {
         </div>
 
         {/* Step panels */}
-        <div className="p-8" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
+        <div className="p-4 sm:p-8" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
           {step === 0 && (
             <div className="space-y-5">
               <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>Dog Info</h2>
@@ -524,24 +528,30 @@ export default function SellPage() {
                 <InputLabel>Dog&apos;s Name</InputLabel>
                 <FieldInput value={form.name} onChange={(v) => update('name', v)} placeholder="e.g. Duke" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <InputLabel>Age (months) *</InputLabel>
-                  <FieldInput
-                    type="number"
-                    value={form.age_months}
-                    onChange={(v) => update('age_months', v)}
-                    placeholder="e.g. 24"
-                  />
-                </div>
-                <div>
-                  <InputLabel>Gender *</InputLabel>
-                  <FieldSelect value={form.gender} onChange={(v) => update('gender', v)}>
-                    <option value="">Select gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
+              <div>
+                <InputLabel>Age *</InputLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <FieldSelect value={form.age_years} onChange={(v) => update('age_years', v)}>
+                    <option value="">Years</option>
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <option key={i} value={String(i)}>{i} {i === 1 ? 'year' : 'years'}</option>
+                    ))}
+                  </FieldSelect>
+                  <FieldSelect value={form.age_months_part} onChange={(v) => update('age_months_part', v)}>
+                    <option value="">Months</option>
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <option key={i} value={String(i)}>{i} {i === 1 ? 'month' : 'months'}</option>
+                    ))}
                   </FieldSelect>
                 </div>
+              </div>
+              <div>
+                <InputLabel>Gender *</InputLabel>
+                <FieldSelect value={form.gender} onChange={(v) => update('gender', v)}>
+                  <option value="">Select gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                </FieldSelect>
               </div>
               <div>
                 <InputLabel>Training Level *</InputLabel>
@@ -881,7 +891,12 @@ export default function SellPage() {
               <div className="mb-8">
                 {[
                   { label: 'Breed', value: form.breed },
-                  { label: 'Age', value: form.age_months ? `${form.age_months} months` : '—' },
+                  { label: 'Age', value: (() => {
+                    const y = form.age_years !== '' ? parseInt(form.age_years, 10) : NaN
+                    const m = form.age_months_part !== '' ? parseInt(form.age_months_part, 10) : NaN
+                    if (isNaN(y) && isNaN(m)) return '—'
+                    return formatAge((isNaN(y) ? 0 : y) * 12 + (isNaN(m) ? 0 : m))
+                  })() },
                   { label: 'Gender', value: form.gender || '—' },
                   { label: 'Training Level', value: form.training_level || '—' },
                   { label: 'Price', value: form.price ? `$${parseInt(form.price).toLocaleString()}` : '—' },

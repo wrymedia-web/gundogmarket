@@ -45,29 +45,29 @@ export default function HomePage() {
       <Navbar />
 
       {/* ── Hero ─────────────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ minHeight: 680 }}>
+      <section className="relative overflow-hidden hero-section">
         <Image src="/photos/hero-dog-sunset.jpg" alt="German Shorthair Pointer at sunset" fill className="object-cover object-center" priority />
         <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(10,10,10,0.92) 45%, rgba(10,10,10,0.5) 100%)' }} />
 
-        <div className="relative z-10 max-w-7xl mx-auto px-6 flex flex-col items-start justify-center" style={{ minHeight: 680, paddingTop: 72, paddingBottom: 72 }}>
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 flex flex-col items-start justify-center hero-inner">
           {/* Editorial tag line */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-6 flex-wrap">
             <div style={{ width: 32, height: 2, background: '#D85A1C' }} />
             <span style={{ ...SC, fontSize: 11, color: '#D85A1C' }}>The Sporting Dog Exchange</span>
-            <span style={{ ...serif, fontSize: 14, color: 'rgba(244,239,229,0.5)', marginLeft: 4 }}>— Of the field, for the field.</span>
+            <span className="hidden sm:inline" style={{ ...serif, fontSize: 14, color: 'rgba(244,239,229,0.5)', marginLeft: 4 }}>— Of the field, for the field.</span>
           </div>
 
           {/* Main headline */}
-          <h1 className="mb-8" style={{ ...display, fontSize: 'clamp(56px, 9vw, 108px)', color: '#EFE7D4', maxWidth: 760 }}>
+          <h1 className="mb-8" style={{ ...display, fontSize: 'clamp(36px, 9vw, 108px)', color: '#EFE7D4', maxWidth: 760 }}>
             The<br />Marketplace<br />for Working<br />
             <span style={{ color: '#D85A1C' }}>Dogs.</span>
           </h1>
 
-          <p style={{ ...sans, fontSize: 15, fontWeight: 400, color: 'rgba(244,239,229,0.65)', maxWidth: 440, lineHeight: 1.65, marginBottom: 32 }}>
+          <p className="text-sm sm:text-[15px]" style={{ ...sans, fontWeight: 400, color: 'rgba(244,239,229,0.65)', maxWidth: 440, lineHeight: 1.65, marginBottom: 32 }}>
             Buy and sell trained bird dogs with verified sellers, secure payment, and hunt test data. Built for hunters.
           </p>
 
-          <div className="flex items-center gap-4 flex-wrap">
+          <div className="flex items-center gap-3 sm:gap-4 flex-wrap">
             <Link href="/dogs" className="gx-btn">Browse Dogs</Link>
             <Link href="/sell" className="gx-btn-ghost">Sell Your Dog</Link>
           </div>
@@ -106,10 +106,10 @@ export default function HomePage() {
       <FeaturedDogs />
 
       {/* ── Photo banner ─────────────────────────────────── */}
-      <section className="relative overflow-hidden" style={{ height: 400 }}>
+      <section className="relative overflow-hidden" style={{ height: 'clamp(280px, 50vw, 400px)' }}>
         <Image src="/photos/dog-celebration.jpg" alt="Hunters with gun dog after a successful hunt" fill className="object-cover object-center" />
         <div className="absolute inset-0 flex items-center justify-center" style={{ background: 'rgba(10,10,10,0.68)' }}>
-          <div className="text-center px-6">
+          <div className="text-center px-4 sm:px-6">
             {/* Serif editorial touch */}
             <div style={{ ...serif, fontSize: 20, color: 'rgba(244,239,229,0.55)', marginBottom: 12 }}>Of the field, for the field.</div>
             <h2 style={{ ...display, fontSize: 'clamp(40px, 6vw, 68px)', color: '#EFE7D4', marginBottom: 28 }}>
@@ -121,7 +121,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Features ─────────────────────────────────────── */}
-      <section style={{ background: '#EFE7D4', padding: '80px 24px' }}>
+      <section className="px-4 sm:px-6 py-12 sm:py-20" style={{ background: '#EFE7D4' }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 10 }}>Why GunDog Exchange</div>
@@ -143,7 +143,7 @@ export default function HomePage() {
       </section>
 
       {/* ── How It Works ─────────────────────────────────── */}
-      <section id="how-it-works" style={{ background: '#0F0F0E', padding: '80px 24px' }}>
+      <section id="how-it-works" className="px-4 sm:px-6 py-12 sm:py-20" style={{ background: '#0F0F0E' }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 10 }}>How It Works</div>
@@ -168,7 +168,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Pricing ──────────────────────────────────────── */}
-      <section id="pricing" style={{ background: '#EFE7D4', padding: '80px 24px' }}>
+      <section id="pricing" className="px-4 sm:px-6 py-12 sm:py-20" style={{ background: '#EFE7D4' }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-14">
             <div style={{ ...SC, fontSize: 10, color: '#D85A1C', marginBottom: 10 }}>Pricing</div>
@@ -221,7 +221,7 @@ export default function HomePage() {
       </section>
 
       {/* ── Footer ───────────────────────────────────────── */}
-      <footer style={{ background: '#0F0F0E', borderTop: '1px solid rgba(255,255,255,0.06)', padding: '40px 24px' }}>
+      <footer className="px-4 sm:px-6 py-8 sm:py-10" style={{ background: '#0F0F0E', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
           <Wordmark />
           <div className="flex items-center gap-8 flex-wrap justify-center">

@@ -156,7 +156,7 @@ export default function BrowsePage() {
       <Navbar />
 
       {/* Header */}
-      <div className="max-w-7xl mx-auto px-6 pt-12 pb-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-8 sm:pt-12 pb-8">
         <div style={{ ...SC, fontSize: 10, color: 'rgba(239,231,212,0.28)', marginBottom: 16 }}>
           GunDog · Exchange
         </div>
@@ -203,7 +203,7 @@ export default function BrowsePage() {
 
         {/* Secondary filters */}
         <div className="flex flex-wrap gap-3 items-center">
-          <div className="relative flex-1" style={{ minWidth: 200, maxWidth: 360 }}>
+          <div className="relative w-full sm:flex-1 sm:w-auto" style={{ minWidth: 0, maxWidth: 360 }}>
             <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'rgba(239,231,212,0.22)' }} />
             <input
               type="text"
@@ -222,8 +222,8 @@ export default function BrowsePage() {
             <option value="male">Male</option>
             <option value="female">Female</option>
           </select>
-          <input type="number" placeholder="Min $" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ ...inputStyle, width: 90 }} />
-          <input type="number" placeholder="Max $" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ ...inputStyle, width: 90 }} />
+          <input type="number" placeholder="Min $" value={minPrice} onChange={(e) => setMinPrice(e.target.value)} style={{ ...inputStyle, width: 80, minWidth: 0 }} />
+          <input type="number" placeholder="Max $" value={maxPrice} onChange={(e) => setMaxPrice(e.target.value)} style={{ ...inputStyle, width: 80, minWidth: 0 }} />
           {hasActiveFilters && (
             <button
               onClick={() => { setSearch(''); setActivePill('ALL'); setStateFilter(''); setGenderFilter(''); setMinPrice(''); setMaxPrice('') }}
@@ -236,7 +236,7 @@ export default function BrowsePage() {
       </div>
 
       {/* Divider + count */}
-      <div className="max-w-7xl mx-auto px-6 mb-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-6">
         <div style={{ height: 1, background: 'rgba(239,231,212,0.06)', marginBottom: 14 }} />
         {dogs.length >= 20 && (
           <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.25)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em' }}>
@@ -246,7 +246,7 @@ export default function BrowsePage() {
       </div>
 
       {/* Grid */}
-      <div className="max-w-7xl mx-auto px-6 pb-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-20">
         {loading ? (
           <div className="p-16 text-center">
             <p style={{ ...sans, fontWeight: 400, color: 'rgba(239,231,212,0.35)', fontSize: 13 }}>Loading listings…</p>

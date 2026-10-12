@@ -173,21 +173,21 @@ export default async function DogProfilePage({
       <Navbar />
 
       {/* Breadcrumb */}
-      <div className="px-6 py-3" style={{ background: '#0F0F0E', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="max-w-7xl mx-auto flex items-center gap-2" style={{ ...sans, fontWeight: 400, fontSize: 13, color: 'rgba(244,239,229,0.4)' }}>
+      <div className="px-4 sm:px-6 py-3" style={{ background: '#0F0F0E', borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="max-w-7xl mx-auto flex items-center gap-2 flex-wrap" style={{ ...sans, fontWeight: 400, fontSize: 13, color: 'rgba(244,239,229,0.4)' }}>
           <Link href="/dogs" style={{ color: 'rgba(244,239,229,0.4)', textDecoration: 'none' }}>Browse Dogs</Link>
           <span>/</span>
-          <span style={{ color: '#D85A1C' }}>{dog.title}</span>
+          <span style={{ color: '#D85A1C', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0 }}>{dog.title}</span>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         <div className="flex flex-col lg:flex-row gap-10">
 
           {/* Main content */}
           <div className="flex-1 min-w-0">
             {/* Photo placeholder */}
-            <div className="w-full mb-6 flex items-center justify-center" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6', height: 400 }}>
+            <div className="w-full mb-6 flex items-center justify-center" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6', height: 'clamp(240px, 50vw, 400px)' }}>
               <div className="text-center">
                 <div style={{ fontSize: 72, opacity: 0.2 }}>🐕</div>
                 <p style={{ ...sans, fontWeight: 400, color: '#7C7A6E', fontSize: 15, marginTop: 8 }}>Photos coming soon</p>
@@ -195,7 +195,7 @@ export default async function DogProfilePage({
             </div>
 
             {/* Details panel */}
-            <div className="p-8 mb-6" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
+            <div className="p-4 sm:p-8 mb-6" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px', background: '#D85A1C', color: 'white' }}>
                   {TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel]}

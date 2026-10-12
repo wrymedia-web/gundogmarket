@@ -93,15 +93,17 @@
     @apply border-border outline-ring/50;
     border-radius: 0 !important;
   }
+  html {
+    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    overflow-x: hidden;
+  }
   body {
     background: #F4EFE5;
     color: #0E0E0E;
     font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
     font-size: 15px;
     line-height: 1.5;
-  }
-  html {
-    font-family: var(--font-montserrat), 'Montserrat', system-ui, sans-serif;
+    overflow-x: hidden;
   }
 }
 
@@ -166,3 +168,11 @@
 }
 
 .gx-btn-ghost:hover { background: rgba(244,239,229,0.08); }
+
+/* Mobile responsive */
+.hero-section { min-height: 480px; }
+.hero-inner { min-height: 480px; padding-top: 48px; padding-bottom: 48px; }
+@media (min-width: 640px) {
+  .hero-section { min-height: 680px; }
+  .hero-inner { min-height: 680px; padding-top: 72px; padding-bottom: 72px; }
+}
