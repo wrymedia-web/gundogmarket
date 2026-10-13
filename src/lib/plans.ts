@@ -83,8 +83,8 @@ export function entitlements(tier: string | null | undefined, status: string | n
       return { effectiveTier: eff, canPublish: true, maxListings: 1 + extras, maxPhotos: 1, videoAllowed: false, featuredAllowed: false }
     case 'pro': // legacy grandfathered
       return { effectiveTier: 'pro', canPublish: true, maxListings: 5 + extras, maxPhotos: 10, videoAllowed: true, featuredAllowed: true }
-    default: // free / no subscription — must pick a plan to publish
-      return { effectiveTier: 'free', canPublish: false, maxListings: 1, maxPhotos: 10, videoAllowed: true, featuredAllowed: false }
+    default: // free / no subscription — must pick a plan to publish (0 publishable)
+      return { effectiveTier: 'free', canPublish: false, maxListings: 0, maxPhotos: 10, videoAllowed: true, featuredAllowed: false }
   }
 }
 

@@ -41,9 +41,9 @@
 
 ## Open Items
 
-1. **Stripe account choice** — new account for GDE vs. reuse OutfitterDesk's. Recommendation: new account (clean revenue/tax separation). Three env vars needed in Vercel: `STRIPE_SECRET_KEY`, `STRIPE_PRICE_GDE_PRO`, `STRIPE_WEBHOOK_SECRET`. Also verify `SUPABASE_SERVICE_ROLE_KEY` is in Vercel.
+1. ~~Stripe billing~~ — **DONE (2026-10-10).** Using OutfitterDesk's Stripe account. Products: GDE Standard (prod_VQ19FxoGIHbEBa, $29/mo) and GDE Featured (prod_VQ19hZf4RNBtVc, $49/mo). Webhook at gundogexchange.com/api/webhooks/stripe. All env vars set in Vercel production.
 2. Remaining P0s from launch audit (escrow claims, self-verify exploit, missing terms/privacy)
-3. Pro tier scaffold exists but unpurchasable without Stripe
+3. ~~Pro tier unpurchasable~~ — Checkout now returns 401 (auth required) instead of 503
 
 ## Credentials
 

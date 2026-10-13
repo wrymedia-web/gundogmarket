@@ -62,10 +62,9 @@ NEXT_PUBLIC_APP_URL
 SUPABASE_SERVICE_ROLE_KEY
 STRIPE_SECRET_KEY
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-STRIPE_PRICE_GDE_BASIC        # not yet set
-STRIPE_PRICE_GDE_PRO           # not yet set
-STRIPE_PRICE_GDE_KENNEL        # not yet set
-STRIPE_WEBHOOK_SECRET           # not yet set
+STRIPE_PRICE_GDE_STANDARD      # price_1UPB7dJpDfzVQvhpcSXAeqrO ($29/mo)
+STRIPE_PRICE_GDE_FEATURED      # price_1UPB7eJpDfzVQvhpbp41MxMe ($49/mo)
+STRIPE_WEBHOOK_SECRET           # whsec for gundogexchange.com webhook
 ```
 
 ## Key References
