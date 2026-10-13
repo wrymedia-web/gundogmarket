@@ -54,7 +54,7 @@ function weekBuckets(dates: string[], weeks = 8) {
 export default async function AdminOverview() {
   const service = createServiceClient()
   const [profilesRes, dogsRes, convRes, msgRes, alertRes, usersRes, stripe] = await Promise.all([
-    service.from('profiles').select('id, created_at, subscription_tier, role'),
+    service.from('profiles').select('id, created_at, subscription_tier, subscription_status, stripe_customer_id, role'),
     service.from('dogs').select('id, status, breed, location_state, created_at, featured'),
     service.from('conversations').select('id', { count: 'exact', head: true }),
     service.from('messages').select('id, created_at'),
@@ -82,6 +82,20 @@ export default async function AdminOverview() {
   const usd = (c: number) => `$${(c / 100).toLocaleString(undefined, { minimumFractionDigits: 0 })}`
   const compPro = Math.max(0, profiles.filter((p) => p.subscription_tier === 'pro').length - stripe.activeSubscribers - stripe.trialing)
 
+  // Signup funnel classification — answers "what are my registered users?"
+  const sellerIds = new Set(dogs.map((d: { id: string }) => (d as unknown as { seller_id?: string }).seller_id))
+  const hasActive = (s: string | null) => s === 'active' || s === 'trialing' || s === 'past_due'
+  const funnel = {
+    total: profiles.length,
+    activeTrials: profiles.filter((p) => p.subscription_status === 'trialing').length,
+    paid: profiles.filter((p) => p.subscription_status === 'active' || p.subscription_status === 'past_due').length,
+    // started checkout (Stripe customer exists) but no active sub = abandoned checkout
+    abandonedCheckout: profiles.filter((p) => p.stripe_customer_id && !hasActive(p.subscription_status)).length,
+    // no Stripe customer, no sub, no listing = browsing / incomplete signup
+    incomplete: profiles.filter((p) => !p.stripe_customer_id && !hasActive(p.subscription_status)).length,
+    grandfathered: dogs.filter((d) => d.status === 'active').length, // active listings w/o requiring sub (legacy)
+  }
+
   return (
     <div>
       <h1 style={{ ...display, fontSize: 24, color: '#0F0F0E', marginBottom: 4 }}>Business Overview</h1>
@@ -101,6 +115,18 @@ export default async function AdminOverview() {
         <Stat label="New Listings (30d)" value={dogs.filter((d) => within(d.created_at, 30)).length} />
         <Stat label="Conversations" value={convRes.count ?? 0} href="/admin/messages" />
         <Stat label="Breed Alert Signups" value={alertRes.count ?? 0} />
+      </div>
+
+      <p style={{ ...sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D85A1C', marginBottom: 10 }}>Signup Funnel — where registered users stand</p>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Stat label="Total Registered" value={funnel.total} href="/admin/users" />
+        <Stat label="Active Trials" value={funnel.activeTrials} accent />
+        <Stat label="Paid Subscriptions" value={funnel.paid} accent href="/admin/subscriptions" />
+        <Stat label="Abandoned Checkout" value={funnel.abandonedCheckout} />
+        <Stat label="Incomplete / Browsing" value={funnel.incomplete} href="/admin/users" />
+        <Stat label="Active Listings (live)" value={byStatus('active')} href="/admin/listings?status=active" />
+        <Stat label="Expired Listings" value={byStatus('expired')} href="/admin/listings" />
+        <Stat label="Comp / Legacy Pro" value={compPro} />
       </div>
 
       <p style={{ ...sans, fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#D85A1C', marginBottom: 10 }}>Revenue (Stripe — GDE products only)</p>
