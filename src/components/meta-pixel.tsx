@@ -59,14 +59,23 @@ function utm(): { utmSource?: string; utmMedium?: string; utmCampaign?: string }
   }
 }
 
-function beacon(event: string, props?: Record<string, unknown>) {
+function cookie(name: string): string | undefined {
+  const m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'))
+  return m ? decodeURIComponent(m[1]) : undefined
+}
+
+function beacon(event: string, props?: Record<string, unknown>, eventId?: string) {
   try {
     const payload = JSON.stringify({
       event,
+      eventId,
       path: window.location.pathname,
       visitorId: visitorId(),
       referrer: document.referrer || undefined,
       listingId: props?.content_ids ? (props.content_ids as string[])[0] : undefined,
+      value: typeof props?.value === 'number' ? props.value : undefined,
+      fbp: cookie('_fbp'),
+      fbc: cookie('_fbc'),
       ...utm(),
     })
     if (navigator.sendBeacon) navigator.sendBeacon('/api/track', payload)
@@ -84,11 +93,14 @@ export function trackEvent(event: string) {
 /** Fire an event everywhere: Meta Pixel + GA4 + first-party store. */
 export function fbTrack(event: string, params?: Record<string, unknown>) {
   if (typeof window === 'undefined') return
-  if (window.fbq) window.fbq('track', event, params ?? {})
+  // Shared event_id lets the server-side Conversions API mirror deduplicate
+  // against this browser event in Meta.
+  const eventId = crypto.randomUUID()
+  if (window.fbq) window.fbq('track', event, params ?? {}, { eventID: eventId })
   const gaEvent = GA_EVENT_MAP[event]
   if (gaEvent && window.gtag) window.gtag('event', gaEvent, { value: params?.value, currency: params?.currency })
   const beEvent = BACKEND_EVENT_MAP[event]
-  if (beEvent) beacon(beEvent, params)
+  if (beEvent) beacon(beEvent, params, eventId)
 }
 
 export default function MetaPixel() {

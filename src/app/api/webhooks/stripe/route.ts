@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createServiceClient } from '@/lib/supabase/service'
+import { capiSend } from '@/lib/meta-capi'
 
 // Subscription lifecycle sync. Tier is derived from the PRICE on the
 // subscription (not just metadata) so Billing Portal plan switches are
@@ -75,9 +76,43 @@ export async function POST(req: Request) {
     }
   }
 
+  // Qualified-seller conversions for Meta (Conversions API). Stable event_ids
+  // derived from the subscription id so Stripe webhook retries and the
+  // overlapping created/checkout.completed events can't double-count.
+  async function sellerConversion(kind: 'StartTrial' | 'Subscribe', sub: Stripe.Subscription, email?: string | null) {
+    const items = (sub.items?.data ?? []) as unknown as { price?: { id: string; unit_amount?: number | null } }[]
+    const planItem = items.find((i) => tierFromPrice(i.price?.id) !== null) ?? items[0]
+    const tier = tierFromPrice(planItem?.price?.id) ?? 'standard'
+    const value = kind === 'Subscribe' ? (planItem?.price?.unit_amount ?? 0) / 100 : 0
+    let em = email ?? null
+    if (!em && typeof sub.customer === 'string') {
+      const cust = await stripe.customers.retrieve(sub.customer).catch(() => null)
+      em = cust && !cust.deleted ? (cust as Stripe.Customer).email : null
+    }
+    await capiSend([{
+      eventName: kind,
+      eventId: `${kind.toLowerCase()}_${sub.id}`,
+      eventSourceUrl: 'https://gundogexchange.com/pricing',
+      user: { email: em, userId: (sub.metadata?.supabase_user_id as string) || null },
+      customData: { value, currency: 'USD', content_name: tier },
+    }])
+    await supabase.from('site_events').insert({
+      event: kind === 'StartTrial' ? 'start_trial' : 'subscribe',
+      path: '/api/webhooks/stripe',
+    }).then(() => {}, () => {})
+  }
+
   switch (event.type) {
+    case 'customer.subscription.updated': {
+      const sub = event.data.object as Stripe.Subscription
+      await syncSubscription(sub)
+      const prevStatus = (event.data.previous_attributes as { status?: string } | undefined)?.status
+      if ((prevStatus === 'trialing' || prevStatus === 'incomplete') && sub.status === 'active') {
+        await sellerConversion('Subscribe', sub) // trial converted to paid
+      }
+      break
+    }
     case 'customer.subscription.created':
-    case 'customer.subscription.updated':
     case 'customer.subscription.deleted':
       await syncSubscription(event.data.object as Stripe.Subscription)
       break
@@ -85,7 +120,11 @@ export async function POST(req: Request) {
       const s = event.data.object as Stripe.Checkout.Session
       if (s.subscription) {
         const sub = await stripe.subscriptions.retrieve(s.subscription as string).catch(() => null)
-        if (sub) await syncSubscription(sub)
+        if (sub) {
+          await syncSubscription(sub)
+          if (sub.status === 'trialing') await sellerConversion('StartTrial', sub, s.customer_details?.email)
+          else if (sub.status === 'active') await sellerConversion('Subscribe', sub, s.customer_details?.email)
+        }
       }
       break
     }

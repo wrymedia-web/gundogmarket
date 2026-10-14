@@ -1,5 +1,14 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
+import { capiSend } from '@/lib/meta-capi'
+
+// Browser-pixel events mirrored to the Conversions API (deduped by eventId).
+const CAPI_MIRROR: Record<string, string> = {
+  view_content: 'ViewContent',
+  initiate_checkout: 'InitiateCheckout',
+  complete_registration: 'CompleteRegistration',
+  lead: 'Lead',
+}
 
 const ALLOWED = new Set([
   'page_view', 'view_content', 'initiate_checkout', 'complete_registration', 'lead', 'add_slot',
@@ -34,6 +43,27 @@ export async function POST(req: Request) {
     utm_campaign: clip(body.utmCampaign, 60),
     referrer: clip(body.referrer, 200),
   }).then(() => {}, () => {}) // analytics must never error the client
+
+  const metaEvent = CAPI_MIRROR[event]
+  const eventId = clip(body.eventId, 64)
+  if (metaEvent && eventId) {
+    const path = clip(body.path, 200) ?? '/'
+    await capiSend([{
+      eventName: metaEvent,
+      eventId,
+      eventSourceUrl: `https://gundogexchange.com${path.startsWith('/') ? path : '/'}`,
+      user: {
+        clientIp: (req.headers.get('x-forwarded-for') ?? '').split(',')[0].trim() || null,
+        userAgent: req.headers.get('user-agent'),
+        fbp: clip(body.fbp, 64),
+        fbc: clip(body.fbc, 400),
+      },
+      customData: {
+        ...(typeof body.value === 'number' ? { value: body.value, currency: 'USD' } : {}),
+        ...(listingId ? { content_ids: [listingId], content_type: 'product' } : {}),
+      },
+    }])
+  }
 
   return new NextResponse(null, { status: 204 })
 }
