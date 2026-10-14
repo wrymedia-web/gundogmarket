@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import {
   formatPrice,
   formatAge,
+  formatLitterDate,
   TRAINING_LEVEL_LABELS,
   type TrainingLevel,
 } from '@/lib/mock-data'
@@ -32,18 +33,25 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const supabase = await createClient()
   const { data: dog } = await supabase
     .from('dogs')
-    .select('title, breed, training_level, price, location_state, images, description')
+    .select('title, breed, training_level, price, location_state, images, description, listing_type, expected_birth_date, kennel_logo_url, sire_images, dam_images')
     .eq('id', id)
     .maybeSingle()
 
   if (!dog) return { title: 'Listing Not Found — GunDog Exchange' }
 
+  const isLitter = dog.listing_type === 'litter'
   const level = TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel] ?? dog.training_level
   const priceStr = dog.price != null ? formatPrice(dog.price) : ''
-  const title = `${dog.title} — ${dog.breed}, ${level}${priceStr ? `, ${priceStr}` : ''}${dog.location_state ? ` — ${dog.location_state}` : ''}`
+  const title = isLitter
+    ? `${dog.title} — Expected ${formatLitterDate(dog.expected_birth_date)}${priceStr ? `, ${priceStr}/puppy` : ''}${dog.location_state ? ` — ${dog.location_state}` : ''}`
+    : `${dog.title} — ${dog.breed}, ${level}${priceStr ? `, ${priceStr}` : ''}${dog.location_state ? ` — ${dog.location_state}` : ''}`
   const description = (dog.description as string | null)?.slice(0, 160)
-    || `${dog.breed} (${level}) for sale on GunDog Exchange.`
-  const firstImage = Array.isArray(dog.images) && dog.images.length > 0 ? (dog.images as string[])[0] : undefined
+    || (isLitter ? `Expected ${dog.breed} litter on GunDog Exchange.` : `${dog.breed} (${level}) for sale on GunDog Exchange.`)
+  const firstImage = (dog.images as string[] | null)?.[0]
+    ?? (dog.kennel_logo_url as string | null)
+    ?? (dog.sire_images as string[] | null)?.[0]
+    ?? (dog.dam_images as string[] | null)?.[0]
+    ?? undefined
 
   return {
     title,
@@ -80,6 +88,15 @@ export default async function DogProfilePage({
     .eq('id', dogRow.seller_id)
     .maybeSingle()
 
+  const isLitter = dogRow.listing_type === 'litter'
+  const sireImages = (dogRow.sire_images as string[] | null) ?? []
+  const damImages = (dogRow.dam_images as string[] | null) ?? []
+  const puppyImages = (dogRow.images as string[] | null) ?? []
+  // Litter hero: puppy photos once they exist, else kennel logo, else parents
+  const galleryImages = isLitter
+    ? (puppyImages.length > 0 ? puppyImages : (dogRow.kennel_logo_url ? [dogRow.kennel_logo_url as string] : [...sireImages, ...damImages]))
+    : puppyImages
+
   const dog = {
     ...dogRow,
     seller: {
@@ -114,8 +131,8 @@ export default async function DogProfilePage({
           {/* Main content */}
           <div className="flex-1 min-w-0">
             {/* Photo gallery */}
-            {dog.images && (dog.images as string[]).length > 0 ? (
-              <PhotoGallery images={dog.images as string[]} title={dog.title} />
+            {galleryImages.length > 0 ? (
+              <PhotoGallery images={galleryImages} title={dog.title} />
             ) : (
               <div className="w-full mb-6 flex items-center justify-center" style={{ background: '#EFE7D4', border: '1px solid #D9C8A6', height: 400 }}>
                 <div className="text-center">
@@ -129,7 +146,7 @@ export default async function DogProfilePage({
             <div className="p-5 sm:p-8 mb-6" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px', background: '#D85A1C', color: 'white' }}>
-                  {TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel]}
+                  {isLitter ? 'Expected Litter' : TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel]}
                 </span>
                 {dog.featured && (
                   <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px', background: '#D85A1C', color: 'white' }}>Featured</span>
@@ -140,12 +157,17 @@ export default async function DogProfilePage({
 
               {/* Quick stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 p-5" style={{ background: '#EFE7D4', border: '1px solid #EFE7D4' }}>
-                {[
+                {(isLitter ? [
+                  { label: 'Breed', value: dog.breed },
+                  { label: 'Expected Birth', value: formatLitterDate(dog.expected_birth_date) },
+                  { label: 'Go-Home Date', value: formatLitterDate(dog.go_home_date) },
+                  { label: 'Location', value: `${dog.location_city}, ${dog.location_state}` },
+                ] : [
                   { label: 'Breed', value: dog.breed },
                   { label: 'Age', value: formatAge(dog.age_months) },
                   { label: 'Gender', value: dog.gender === 'male' ? '♂ Male' : '♀ Female' },
                   { label: 'Location', value: `${dog.location_city}, ${dog.location_state}` },
-                ].map((item) => (
+                ]).map((item) => (
                   <div key={item.label}>
                     <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 4 }}>{item.label}</p>
                     <p style={{ ...sans, fontWeight: 600, fontSize: 15, color: '#0F0F0E' }}>{item.value}</p>
@@ -153,9 +175,49 @@ export default async function DogProfilePage({
                 ))}
               </div>
 
-              <h2 style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12 }}>About This Dog</h2>
+              <h2 style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12 }}>{isLitter ? 'About This Litter' : 'About This Dog'}</h2>
               <div style={{ width: 32, height: 2, background: '#D85A1C', marginBottom: 16 }} />
               <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#4A4A4A', lineHeight: 1.65, marginBottom: 24 }}>{dog.description}</p>
+
+              {isLitter && (dog.sire_name || dog.dam_name || sireImages.length > 0 || damImages.length > 0) && (
+                <div className="mb-6">
+                  <h2 style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12 }}>The Parents</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {[
+                      { tag: 'Sire', name: dog.sire_name, photos: sireImages },
+                      { tag: 'Dam', name: dog.dam_name, photos: damImages },
+                    ].map(({ tag, name, photos }) => (
+                      <div key={tag} style={{ border: '1px solid #D9C8A6', background: '#EFE7D4' }}>
+                        {photos.length > 0 ? (
+                          <div style={{ position: 'relative', aspectRatio: '4 / 3', overflow: 'hidden' }}>
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={photos[0]} alt={`${tag}${name ? ` — ${name}` : ''}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <span style={{ position: 'absolute', top: 10, left: 10, ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', background: '#0F0F0E', color: 'white', padding: '4px 10px' }}>{tag}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center" style={{ aspectRatio: '4 / 3', background: '#EAE4D6' }}>
+                            <span style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#7C7A6E' }}>{tag} — no photo</span>
+                          </div>
+                        )}
+                        <div style={{ padding: '12px 14px' }}>
+                          <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', marginBottom: 2 }}>{tag}</p>
+                          <p style={{ ...sans, fontWeight: 600, fontSize: 15, color: '#0F0F0E' }}>{name || '—'}</p>
+                        </div>
+                        {photos.length > 1 && (
+                          <div className="grid grid-cols-3 gap-1" style={{ padding: '0 8px 8px' }}>
+                            {photos.slice(1).map((url) => (
+                              <div key={url} style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden' }}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={url} alt={`${tag} photo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {dog.health_certs.length > 0 && (
                 <div className="mb-6">
@@ -208,7 +270,10 @@ export default async function DogProfilePage({
           {/* Sticky sidebar */}
           <aside className="w-full lg:w-72 shrink-0">
             <div className="p-6 mb-5 sticky top-6" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
-              <div style={{ ...display, fontSize: 42, color: '#D85A1C', marginBottom: 4 }}>{formatPrice(dog.price)}</div>
+              <div style={{ ...display, fontSize: 42, color: '#D85A1C', marginBottom: 4 }}>
+                {formatPrice(dog.price)}
+                {isLitter && <span style={{ ...sans, fontWeight: 600, fontSize: 14, textTransform: 'none', letterSpacing: 0, color: '#7C7A6E' }}> /puppy</span>}
+              </div>
               <div className="flex items-center gap-1 mb-6" style={{ ...sans, fontWeight: 400, color: '#7C7A6E', fontSize: 14 }}>
                 <MapPin size={13} style={{ color: '#7C7A6E' }} />
                 {dog.location_city}, {dog.location_state}

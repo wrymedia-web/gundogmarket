@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/service'
 
-const ALLOWED = new Set(['page_view', 'view_content', 'initiate_checkout', 'complete_registration', 'lead', 'add_slot'])
+const ALLOWED = new Set([
+  'page_view', 'view_content', 'initiate_checkout', 'complete_registration', 'lead', 'add_slot',
+  // seller listing funnel
+  'sell_start', 'sell_step_details', 'sell_step_media', 'sell_step_review', 'sell_published',
+])
 const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.slice(0, n) : null)
 
 export async function POST(req: Request) {

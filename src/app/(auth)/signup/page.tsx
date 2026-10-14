@@ -40,6 +40,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [fullName, setFullName] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -54,7 +55,7 @@ export default function SignupPage() {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, marketing_opt_in: marketingOptIn },
         emailRedirectTo: `${window.location.origin}/callback`,
       },
     })
@@ -135,6 +136,17 @@ export default function SignupPage() {
               <label style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#0F0F0E', display: 'block', marginBottom: 6 }}>Password</label>
               <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required minLength={6} className="w-full px-4 py-3 outline-none" style={fieldInput} />
             </div>
+            <label className="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={marketingOptIn}
+                onChange={(e) => setMarketingOptIn(e.target.checked)}
+                style={{ marginTop: 3, width: 16, height: 16, accentColor: '#D85A1C', cursor: 'pointer' }}
+              />
+              <span style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E', lineHeight: 1.5 }}>
+                Send me tips for selling my dog and occasional updates from GunDog Exchange. Unsubscribe anytime.
+              </span>
+            </label>
             <button type="submit" disabled={loading} className="w-full py-4 disabled:opacity-60" style={{ background: '#D85A1C', ...sans, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'white', cursor: loading ? 'not-allowed' : 'pointer', border: 'none' }}>
               {loading ? 'Creating account...' : 'Create Account'}
             </button>

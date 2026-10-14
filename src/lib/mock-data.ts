@@ -17,6 +17,14 @@ export interface DogListing {
   video_url?: string
   status: 'active' | 'pending' | 'sold' | 'draft'
   featured: boolean
+  listing_type?: 'dog' | 'litter'
+  expected_birth_date?: string | null
+  go_home_date?: string | null
+  sire_name?: string | null
+  dam_name?: string | null
+  sire_images?: string[]
+  dam_images?: string[]
+  kennel_logo_url?: string | null
   seller: {
     id: string
     full_name: string
@@ -272,6 +280,19 @@ export function formatAge(totalMonths: number | null | undefined): string {
   if (years === 0) return monthStr
   if (rem === 0) return yearStr
   return `${yearStr}, ${monthStr}`
+}
+
+// "May 12, 2027" from a YYYY-MM-DD date column (parsed as local, not UTC)
+export function formatLitterDate(date: string | null | undefined): string {
+  if (!date) return '—'
+  const [y, m, d] = date.split('-').map(Number)
+  if (!y || !m || !d) return '—'
+  return new Date(y, m - 1, d).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+}
+
+// Hero image for a card: puppy photos win, then kennel logo, then parents
+export function listingHeroImage(l: { images?: string[] | null; kennel_logo_url?: string | null; sire_images?: string[] | null; dam_images?: string[] | null }): string | undefined {
+  return l.images?.[0] ?? l.kennel_logo_url ?? l.sire_images?.[0] ?? l.dam_images?.[0] ?? undefined
 }
 
 export const TRAINING_LEVEL_LABELS: Record<TrainingLevel, string> = {

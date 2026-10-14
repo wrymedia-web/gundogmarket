@@ -11,6 +11,8 @@ import {
   US_STATES,
   formatPrice,
   formatAge,
+  formatLitterDate,
+  listingHeroImage,
   TRAINING_LEVEL_LABELS,
   type TrainingLevel,
   type DogListing,
@@ -52,11 +54,12 @@ const BREED_GROUPS: Record<string, string[]> = {
   VERSATILE: ['German Wirehaired Pointer', 'Wirehaired Pointing Griffon', 'Pudelpointer', 'Drahthaars'],
 }
 
-type PillFilter = 'ALL' | 'PUPS' | 'STARTED' | 'FINISHED' | 'TITLES' | 'POINTERS' | 'RETRIEVERS' | 'SPANIELS' | 'VERSATILE'
+type PillFilter = 'ALL' | 'PUPS' | 'LITTERS' | 'STARTED' | 'FINISHED' | 'TITLES' | 'POINTERS' | 'RETRIEVERS' | 'SPANIELS' | 'VERSATILE'
 
 const PILLS: { label: string; value: PillFilter }[] = [
   { label: 'All', value: 'ALL' },
   { label: 'Pups', value: 'PUPS' },
+  { label: 'Litters', value: 'LITTERS' },
   { label: 'Started', value: 'STARTED' },
   { label: 'Finished', value: 'FINISHED' },
   { label: 'Titles', value: 'TITLES' },
@@ -89,7 +92,7 @@ export default function BrowsePage() {
     ;(async () => {
       const { data, error } = await supabase
         .from('dogs')
-        .select('id,title,breed,age_months,gender,training_level,price,location_state,location_city,description,health_certs,hunt_titles,images,status,featured,seller_id,created_at')
+        .select('id,title,breed,age_months,gender,training_level,price,location_state,location_city,description,health_certs,hunt_titles,images,status,featured,seller_id,created_at,listing_type,expected_birth_date,go_home_date,sire_images,dam_images,kennel_logo_url')
         .eq('status', 'active')
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false })
@@ -126,6 +129,7 @@ export default function BrowsePage() {
         ) return false
       }
       if (activePill === 'PUPS' && dog.training_level !== 'puppy') return false
+      if (activePill === 'LITTERS' && dog.listing_type !== 'litter') return false
       if (activePill === 'STARTED' && dog.training_level !== 'started') return false
       if (activePill === 'FINISHED' && dog.training_level !== 'finished') return false
       if (activePill === 'TITLES' && dog.hunt_titles.length === 0) return false
@@ -281,11 +285,12 @@ export default function BrowsePage() {
           /* Editorial layout — big feature cards while the exchange is young */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filtered.map((dog) => {
-              const badgeLabel = [
+              const isLitter = dog.listing_type === 'litter'
+              const badgeLabel = isLitter ? 'Expected Litter' : [
                 TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel],
                 dog.hunt_titles.length > 0 ? 'Titled' : '',
               ].filter(Boolean).join(' · ')
-              const heroImg = (dog as unknown as { images?: string[] }).images?.[0]
+              const heroImg = listingHeroImage(dog)
 
               return (
                 <Link href={`/dogs/${dog.id}`} key={dog.id} className="group block" style={{ textDecoration: 'none' }}>
@@ -306,7 +311,9 @@ export default function BrowsePage() {
                     </div>
                     <div style={{ padding: '28px 28px 26px' }}>
                       <p style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: BLAZE, marginBottom: 12 }}>
-                        {dog.breed} · {dog.gender === 'male' ? 'Male' : 'Female'} · {formatAge(dog.age_months)}
+                        {isLitter
+                          ? `${dog.breed} · Due ${formatLitterDate(dog.expected_birth_date)}`
+                          : `${dog.breed} · ${dog.gender === 'male' ? 'Male' : 'Female'} · ${formatAge(dog.age_months)}`}
                       </p>
                       <h3 style={{ ...serif, fontSize: 36, color: BONE_SOFT, lineHeight: 1.05, marginBottom: 12 }}>
                         {dog.title}
@@ -337,12 +344,13 @@ export default function BrowsePage() {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {filtered.map((dog) => {
-              const badgeLabel = [
+              const isLitter = dog.listing_type === 'litter'
+              const badgeLabel = isLitter ? 'Expected Litter' : [
                 TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel],
                 dog.hunt_titles.length > 0 ? 'Titled' : '',
               ].filter(Boolean).join(' · ')
 
-              const heroImg = (dog as unknown as { images?: string[] }).images?.[0]
+              const heroImg = listingHeroImage(dog)
 
               return (
                 <Link href={`/dogs/${dog.id}`} key={dog.id} className="group block" style={{ textDecoration: 'none' }}>
@@ -374,9 +382,11 @@ export default function BrowsePage() {
 
                     {/* Card content */}
                     <div style={{ padding: '20px 20px 18px', display: 'flex', flexDirection: 'column', flex: 1 }}>
-                      {/* Breed · gender · age */}
+                      {/* Breed · gender · age (or expected date for litters) */}
                       <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: BLAZE, marginBottom: 10 }}>
-                        {dog.breed} · {dog.gender === 'male' ? 'Male' : 'Female'} · {formatAge(dog.age_months)}
+                        {isLitter
+                          ? `${dog.breed} · Due ${formatLitterDate(dog.expected_birth_date)}`
+                          : `${dog.breed} · ${dog.gender === 'male' ? 'Male' : 'Female'} · ${formatAge(dog.age_months)}`}
                       </p>
 
                       {/* Dog name — Cormorant italic */}

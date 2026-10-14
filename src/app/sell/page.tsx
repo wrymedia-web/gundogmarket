@@ -6,9 +6,11 @@ import Navbar from '@/components/navbar'
 import { ALL_BREEDS, US_STATES, formatAge } from '@/lib/mock-data'
 import { entitlements, type Entitlements } from '@/lib/plans'
 import { createClient } from '@/lib/supabase/client'
+import { trackEvent } from '@/components/meta-pixel'
 import { CheckCircle, X } from 'lucide-react'
 
 const MAX_PHOTOS = 10
+const MAX_PARENT_PHOTOS = 3
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024
 const MAX_DOCS = 10
 const MAX_DOC_BYTES = 10 * 1024 * 1024
@@ -32,7 +34,8 @@ const SC: React.CSSProperties = {
   fontStyle: 'normal',
 }
 
-const STEPS = ['Dog Info', 'Details', 'Media', 'Review & Publish']
+const DOG_STEPS = ['Dog Info', 'Details', 'Media', 'Review & Publish']
+const LITTER_STEPS = ['Litter Info', 'Details', 'Media', 'Review & Publish']
 
 const HEALTH_CERT_OPTIONS = [
   'No health testing performed',
@@ -81,6 +84,14 @@ const REGISTRATION_OPTIONS = [
 ]
 
 interface FormData {
+  listing_type: 'dog' | 'litter'
+  expected_birth_date: string
+  go_home_date: string
+  sire_name: string
+  dam_name: string
+  sire_images: string[]
+  dam_images: string[]
+  kennel_logo_url: string
   breed: string
   name: string
   age_years: string
@@ -104,6 +115,14 @@ interface FormData {
 }
 
 const defaultForm: FormData = {
+  listing_type: 'dog',
+  expected_birth_date: '',
+  go_home_date: '',
+  sire_name: '',
+  dam_name: '',
+  sire_images: [],
+  dam_images: [],
+  kennel_logo_url: '',
   breed: '',
   name: '',
   age_years: '',
@@ -173,10 +192,16 @@ export default function SellPage() {
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const sireInputRef = useRef<HTMLInputElement>(null)
+  const damInputRef = useRef<HTMLInputElement>(null)
+  const logoInputRef = useRef<HTMLInputElement>(null)
   const docInputRef = useRef<HTMLInputElement>(null)
   const pedigreeInputRef = useRef<HTMLInputElement>(null)
   const router = useRouter()
   const supabase = createClient()
+
+  const isLitter = form.listing_type === 'litter'
+  const STEPS = isLitter ? LITTER_STEPS : DOG_STEPS
 
   // Plan entitlements gate: publishing requires an active plan
   const [ent, setEnt] = useState<Entitlements | null>(null)
@@ -211,9 +236,18 @@ export default function SellPage() {
       const e = entitlements(profile?.subscription_tier, profile?.subscription_status, profile?.extra_listings ?? 0)
       if (!e.canPublish) { router.push('/pricing'); return }
       setEnt(e)
+      trackEvent('sell_start')
     })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function goToStep(next: number) {
+    if (next > step) {
+      const names = ['sell_step_details', 'sell_step_media', 'sell_step_review']
+      trackEvent(names[next - 1] ?? 'sell_step_review')
+    }
+    setStep(next)
+  }
   const maxPhotos = ent?.maxPhotos ?? 1
 
   function update(key: keyof FormData, value: string | string[]) {
@@ -266,6 +300,54 @@ export default function SellPage() {
 
   function removeImage(url: string) {
     setForm((prev) => ({ ...prev, images: prev.images.filter((u) => u !== url) }))
+  }
+
+  // Parent (sire/dam) photos and kennel logo live outside the plan photo cap —
+  // they stand in for puppy photos on expected-litter listings.
+  async function handleParentFiles(files: FileList | null, key: 'sire_images' | 'dam_images') {
+    if (!files || files.length === 0) return
+    setError(null)
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('You must be logged in to upload photos.'); return }
+    const slotsLeft = MAX_PARENT_PHOTOS - form[key].length
+    const incoming = Array.from(files).slice(0, Math.max(0, slotsLeft))
+    setUploading(true)
+    try {
+      const uploaded: string[] = []
+      for (const file of incoming) {
+        if (file.size > MAX_PHOTO_BYTES) { setError(`"${file.name}" is over 5 MB — skipped.`); continue }
+        if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setError(`"${file.name}" isn't a JPG, PNG, or WEBP — skipped.`); continue }
+        const url = await uploadOne(file, 'dog-photos', user.id)
+        if (url) uploaded.push(url)
+      }
+      setForm((prev) => ({ ...prev, [key]: [...prev[key], ...uploaded] }))
+    } finally {
+      setUploading(false)
+      const ref = key === 'sire_images' ? sireInputRef : damInputRef
+      if (ref.current) ref.current.value = ''
+    }
+  }
+
+  function removeParentImage(url: string, key: 'sire_images' | 'dam_images') {
+    setForm((prev) => ({ ...prev, [key]: prev[key].filter((u) => u !== url) }))
+  }
+
+  async function handleLogo(files: FileList | null) {
+    if (!files || files.length === 0) return
+    setError(null)
+    const file = files[0]
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { setError('You must be logged in to upload a logo.'); return }
+    if (file.size > MAX_PHOTO_BYTES) { setError('Logo is over 5 MB.'); return }
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) { setError('Logo must be JPG, PNG, or WEBP.'); return }
+    setUploading(true)
+    try {
+      const url = await uploadOne(file, 'dog-photos', user.id)
+      if (url) setForm((prev) => ({ ...prev, kennel_logo_url: url }))
+    } finally {
+      setUploading(false)
+      if (logoInputRef.current) logoInputRef.current.value = ''
+    }
   }
 
   async function uploadOne(
@@ -373,18 +455,32 @@ export default function SellPage() {
         setError('Video is included with the Featured plan. Remove the video link or upgrade.')
         return
       }
+      if (isLitter && !form.expected_birth_date) {
+        setError('Enter the expected birth date for the litter.')
+        return
+      }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
       const ageYears = form.age_years ? parseInt(form.age_years, 10) : 0
       const ageMonthsRem = form.age_months_rem ? parseInt(form.age_months_rem, 10) : 0
-      const ageMonths = (ageYears || ageMonthsRem) ? (ageYears * 12 + ageMonthsRem) : null
-      const title = form.name ? `${form.name} — ${form.breed}` : form.breed
+      const ageMonths = isLitter ? null : ((ageYears || ageMonthsRem) ? (ageYears * 12 + ageMonthsRem) : null)
+      const title = isLitter
+        ? (form.name ? `${form.name} — ${form.breed} Litter` : `${form.breed} — Expected Litter`)
+        : (form.name ? `${form.name} — ${form.breed}` : form.breed)
       const { error: insertErr } = await supabase.from('dogs').insert({
         seller_id: user.id,
         title,
         breed: form.breed,
         age_months: ageMonths,
-        gender: form.gender || null,
-        training_level: form.training_level,
+        gender: isLitter ? null : (form.gender || null),
+        training_level: isLitter ? 'puppy' : form.training_level,
+        listing_type: form.listing_type,
+        expected_birth_date: isLitter ? (form.expected_birth_date || null) : null,
+        go_home_date: isLitter ? (form.go_home_date || null) : null,
+        sire_name: isLitter ? (form.sire_name.trim() || null) : null,
+        dam_name: isLitter ? (form.dam_name.trim() || null) : null,
+        sire_images: isLitter ? form.sire_images : [],
+        dam_images: isLitter ? form.dam_images : [],
+        kennel_logo_url: isLitter ? (form.kennel_logo_url || null) : null,
         price: priceCents,
         location_state: form.location_state || null,
         location_city: form.location_city || null,
@@ -404,6 +500,7 @@ export default function SellPage() {
         setError(`Publish failed: ${insertErr.message}`)
         return
       }
+      trackEvent('sell_published')
       setPublished(true)
     } finally {
       setPublishing(false)
@@ -487,7 +584,27 @@ export default function SellPage() {
         <div className="p-5 sm:p-8" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
           {step === 0 && (
             <div className="space-y-5">
-              <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>Dog Info</h2>
+              <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>{isLitter ? 'Litter Info' : 'Dog Info'}</h2>
+              <div>
+                <InputLabel>What are you listing? *</InputLabel>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {([
+                    { value: 'dog', label: 'Individual Dog', desc: 'A puppy or adult dog that is ready to sell now' },
+                    { value: 'litter', label: 'Expected Litter', desc: 'A planned or on-the-way litter — no puppy photos required' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => update('listing_type', opt.value)}
+                      className="text-left px-4 py-3"
+                      style={{ border: `2px solid ${form.listing_type === opt.value ? '#D85A1C' : '#D9C8A6'}`, background: form.listing_type === opt.value ? '#FEF3C7' : 'white', cursor: 'pointer' }}
+                    >
+                      <span style={{ ...sans, fontWeight: 800, fontSize: 13, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#0F0F0E', display: 'block', marginBottom: 2 }}>{opt.label}</span>
+                      <span style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E' }}>{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div>
                 <InputLabel>Breed *</InputLabel>
                 <FieldSelect value={form.breed} onChange={(v) => update('breed', v)}>
@@ -498,9 +615,23 @@ export default function SellPage() {
                 </FieldSelect>
               </div>
               <div>
-                <InputLabel>Dog&apos;s Name</InputLabel>
-                <FieldInput value={form.name} onChange={(v) => update('name', v)} placeholder="e.g. Duke" />
+                <InputLabel>{isLitter ? 'Litter Name (optional)' : "Dog's Name"}</InputLabel>
+                <FieldInput value={form.name} onChange={(v) => update('name', v)} placeholder={isLitter ? 'e.g. Spring 2027 Addie × Gauge' : 'e.g. Duke'} />
               </div>
+              {isLitter && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <InputLabel>Expected Birth Date *</InputLabel>
+                    <FieldInput type="date" value={form.expected_birth_date} onChange={(v) => update('expected_birth_date', v)} />
+                  </div>
+                  <div>
+                    <InputLabel>Estimated Go-Home Date</InputLabel>
+                    <FieldInput type="date" value={form.go_home_date} onChange={(v) => update('go_home_date', v)} />
+                  </div>
+                </div>
+              )}
+              {!isLitter && (
+              <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <InputLabel>Age</InputLabel>
@@ -554,8 +685,10 @@ export default function SellPage() {
                   <option value="brood">Brood (breeding stock)</option>
                 </FieldSelect>
               </div>
+              </>
+              )}
               <div>
-                <InputLabel>Asking Price (USD) *</InputLabel>
+                <InputLabel>{isLitter ? 'Price per Puppy (USD) *' : 'Asking Price (USD) *'}</InputLabel>
                 <FieldInput
                   type="number"
                   value={form.price}
@@ -569,19 +702,33 @@ export default function SellPage() {
           {step === 1 && (
             <div className="space-y-5">
               <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>Details</h2>
+              {isLitter && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <InputLabel>Sire (Father) *</InputLabel>
+                    <FieldInput value={form.sire_name} onChange={(v) => update('sire_name', v)} placeholder="e.g. Gauge — MH, OFA Excellent" />
+                  </div>
+                  <div>
+                    <InputLabel>Dam (Mother) *</InputLabel>
+                    <FieldInput value={form.dam_name} onChange={(v) => update('dam_name', v)} placeholder="e.g. Addie — SH, OFA Good" />
+                  </div>
+                </div>
+              )}
               <div>
                 <InputLabel>Description *</InputLabel>
                 <textarea
                   value={form.description}
                   onChange={(e) => update('description', e.target.value)}
-                  placeholder="Describe the dog's training, temperament, hunting experience, lineage, etc."
+                  placeholder={isLitter
+                    ? "Describe the breeding: sire and dam's hunting style, titles, health testing, pedigree highlights, and what you expect from the pups."
+                    : "Describe the dog's training, temperament, hunting experience, lineage, etc."}
                   rows={5}
                   className="w-full px-4 py-3 outline-none resize-none"
                   style={{ border: '1px solid #D9C8A6', background: 'white', color: '#0F0F0E', fontFamily: "var(--font-montserrat), 'Montserrat', system-ui, sans-serif", fontWeight: 400, fontSize: 16 }}
                 />
               </div>
               <div>
-                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Paperwork & Registrations</h3>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>{isLitter ? 'Parent Registrations & Papers' : 'Paperwork & Registrations'}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {REGISTRATION_OPTIONS.map((reg) => (
                     <label key={reg} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ border: `1px solid ${form.registrations.includes(reg) ? '#D85A1C' : '#D9C8A6'}`, background: form.registrations.includes(reg) ? '#FEF3C7' : 'white' }}>
@@ -597,7 +744,7 @@ export default function SellPage() {
               </div>
 
               <div>
-                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Health Certifications</h3>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>{isLitter ? 'Parent Health Certifications' : 'Health Certifications'}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {HEALTH_CERT_OPTIONS.map((cert) => (
                     <label key={cert} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ border: `1px solid ${form.health_certs.includes(cert) ? '#D85A1C' : '#D9C8A6'}`, background: form.health_certs.includes(cert) ? '#FEF3C7' : 'white' }}>
@@ -613,7 +760,7 @@ export default function SellPage() {
               </div>
 
               <div>
-                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>Hunt Titles</h3>
+                <h3 style={{ ...sans, fontWeight: 800, fontSize: 15, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', marginBottom: 12, paddingBottom: 8, borderBottom: '2px solid #D85A1C' }}>{isLitter ? 'Parent Hunt Titles' : 'Hunt Titles'}</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
                   {HUNT_TITLE_OPTIONS.map((title) => (
                     <label key={title} className="flex items-center gap-3 px-4 py-3 cursor-pointer" style={{ border: `1px solid ${form.hunt_titles.includes(title) ? '#D85A1C' : '#D9C8A6'}`, background: form.hunt_titles.includes(title) ? '#FEF3C7' : 'white' }}>
@@ -648,8 +795,109 @@ export default function SellPage() {
           {step === 2 && (
             <div className="space-y-6">
               <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>Photos &amp; Video</h2>
+              {isLitter && (
+                <>
+                  <div style={{ border: '1px solid #D9C8A6', background: '#FEF3C7', padding: '12px 16px' }}>
+                    <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#92400E' }}>
+                      Puppies not born yet? No problem — upload photos of the sire and dam, or use your kennel logo as the main image. You can swap in puppy photos from your dashboard once the litter arrives.
+                    </p>
+                  </div>
+                  {([
+                    { key: 'sire_images' as const, label: 'Sire Photos', ref: sireInputRef, tag: 'Sire' },
+                    { key: 'dam_images' as const, label: 'Dam Photos', ref: damInputRef, tag: 'Dam' },
+                  ]).map(({ key, label, ref, tag }) => (
+                    <div key={key}>
+                      <InputLabel>{label}</InputLabel>
+                      <input
+                        ref={ref}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp"
+                        multiple
+                        onChange={(e) => handleParentFiles(e.target.files, key)}
+                        style={{ display: 'none' }}
+                      />
+                      <div
+                        onClick={() => !uploading && form[key].length < MAX_PARENT_PHOTOS && ref.current?.click()}
+                        onDragOver={(e) => { e.preventDefault() }}
+                        onDrop={(e) => { e.preventDefault(); if (!uploading) handleParentFiles(e.dataTransfer.files, key) }}
+                        className="flex flex-col items-center justify-center py-8"
+                        style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading || form[key].length >= MAX_PARENT_PHOTOS ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+                      >
+                        <div style={{ fontSize: 28, opacity: 0.25, marginBottom: 8 }}>📷</div>
+                        <p style={{ ...sans, fontWeight: 400, fontSize: 15, color: '#0F0F0E', marginBottom: 2 }}>
+                          {uploading ? 'Uploading…' : form[key].length >= MAX_PARENT_PHOTOS ? 'Photo limit reached' : `Drop ${tag.toLowerCase()} photos here or click to upload`}
+                        </p>
+                        <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E' }}>
+                          Up to {MAX_PARENT_PHOTOS} photos · JPG, PNG, WEBP · Max 5MB · {form[key].length}/{MAX_PARENT_PHOTOS} added
+                        </p>
+                      </div>
+                      {form[key].length > 0 && (
+                        <div className="grid grid-cols-4 sm:grid-cols-5 gap-3 mt-3">
+                          {form[key].map((url) => (
+                            <div key={url} style={{ position: 'relative', aspectRatio: '1 / 1', overflow: 'hidden', border: '1px solid #D9C8A6' }}>
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={url} alt={`${tag} photo`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              <span style={{ position: 'absolute', bottom: 0, left: 0, right: 0, ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', background: 'rgba(15,15,14,0.75)', color: 'white', textAlign: 'center', padding: '3px 0' }}>{tag}</span>
+                              <button
+                                type="button"
+                                onClick={() => removeParentImage(url, key)}
+                                aria-label={`Remove ${tag.toLowerCase()} photo`}
+                                style={{ position: 'absolute', top: 4, right: 4, background: 'rgba(15,15,14,0.85)', color: 'white', border: 'none', width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                              >
+                                <X size={14} />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  <div>
+                    <InputLabel>Kennel Logo (used as the main image if there are no photos)</InputLabel>
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(e) => handleLogo(e.target.files)}
+                      style={{ display: 'none' }}
+                    />
+                    {form.kennel_logo_url ? (
+                      <div className="flex items-center gap-3 px-4 py-3" style={{ border: '1px solid #D85A1C', background: '#FEF3C7' }}>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={form.kennel_logo_url} alt="Kennel logo" style={{ width: 48, height: 48, objectFit: 'contain' }} />
+                        <span style={{ ...sans, fontWeight: 700, fontSize: 13, color: '#0F0F0E', flex: 1 }}>Kennel logo uploaded</span>
+                        <button
+                          type="button"
+                          onClick={() => logoInputRef.current?.click()}
+                          style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.06em', color: '#0F0F0E', background: 'transparent', border: '1px solid #D9C8A6', padding: '6px 12px', cursor: 'pointer' }}
+                        >
+                          Replace
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => update('kennel_logo_url', '')}
+                          aria-label="Remove kennel logo"
+                          style={{ background: 'transparent', color: '#7C7A6E', border: 'none', cursor: 'pointer', padding: 4 }}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        onClick={() => !uploading && logoInputRef.current?.click()}
+                        className="flex items-center justify-center py-6"
+                        style={{ border: '2px dashed #D9C8A6', background: '#EFE7D4', cursor: uploading ? 'not-allowed' : 'pointer', opacity: uploading ? 0.6 : 1 }}
+                      >
+                        <p style={{ ...sans, fontWeight: 400, fontSize: 14, color: '#7C7A6E' }}>
+                          {uploading ? 'Uploading…' : 'Click to upload your kennel logo · JPG, PNG, WEBP · Max 5MB'}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
               <div>
-                <InputLabel>Photos</InputLabel>
+                <InputLabel>{isLitter ? 'Puppy Photos (optional — add once the litter arrives)' : 'Photos'}</InputLabel>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -814,7 +1062,22 @@ export default function SellPage() {
             <div>
               <h2 style={{ ...sans, fontWeight: 800, fontSize: 22, textTransform: 'uppercase', letterSpacing: '-0.01em', color: '#0F0F0E', marginBottom: 20 }}>Review &amp; Publish</h2>
               <div className="mb-8">
-                {[
+                {(isLitter ? [
+                  { label: 'Listing Type', value: 'Expected Litter' },
+                  { label: 'Breed', value: form.breed },
+                  { label: 'Expected Birth', value: form.expected_birth_date || '—' },
+                  { label: 'Go-Home Date', value: form.go_home_date || '—' },
+                  { label: 'Sire', value: form.sire_name || '—' },
+                  { label: 'Dam', value: form.dam_name || '—' },
+                  { label: 'Price / Puppy', value: form.price ? `$${parseInt(form.price).toLocaleString()}` : '—' },
+                  { label: 'Location', value: [form.location_city, form.location_state].filter(Boolean).join(', ') || '—' },
+                  { label: 'Registrations', value: [...form.registrations, ...splitOther(form.registration_other)].join(', ') || 'None' },
+                  { label: 'Health Certs', value: [...form.health_certs, ...splitOther(form.health_cert_other)].join(', ') || 'None' },
+                  { label: 'Hunt Titles', value: [...form.hunt_titles, ...splitOther(form.hunt_title_other)].join(', ') || 'None' },
+                  { label: 'Photos', value: [form.sire_images.length && `${form.sire_images.length} sire`, form.dam_images.length && `${form.dam_images.length} dam`, form.images.length && `${form.images.length} puppy`, form.kennel_logo_url && 'kennel logo'].filter(Boolean).join(', ') || 'None yet' },
+                  { label: 'Paperwork Files', value: form.documents.length > 0 ? `${form.documents.length} file${form.documents.length === 1 ? '' : 's'} attached` : 'None' },
+                  { label: 'Pedigree', value: form.pedigree_url ? 'Uploaded' : 'Not uploaded' },
+                ] : [
                   { label: 'Breed', value: form.breed },
                   { label: 'Age', value: (form.age_years || form.age_months_rem) ? formatAge((parseInt(form.age_years || '0', 10) * 12) + parseInt(form.age_months_rem || '0', 10)) : '—' },
                   { label: 'Gender', value: form.gender || '—' },
@@ -826,7 +1089,7 @@ export default function SellPage() {
                   { label: 'Hunt Titles', value: [...form.hunt_titles, ...splitOther(form.hunt_title_other)].join(', ') || 'None' },
                   { label: 'Paperwork Files', value: form.documents.length > 0 ? `${form.documents.length} file${form.documents.length === 1 ? '' : 's'} attached` : 'None' },
                   { label: 'Pedigree', value: form.pedigree_url ? 'Uploaded' : 'Not uploaded' },
-                ].map(({ label, value }) => (
+                ]).map(({ label, value }) => (
                   <div key={label} className="flex gap-4 py-3" style={{ borderBottom: '1px solid #EFE7D4' }}>
                     <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#7C7A6E', width: 120, flexShrink: 0 }}>{label}</span>
                     <span style={{ ...sans, fontWeight: 400, fontSize: 15, color: '#0F0F0E' }}>{value}</span>
@@ -860,9 +1123,9 @@ export default function SellPage() {
               )}
               <button
                 onClick={handlePublish}
-                disabled={publishing || !form.breed || !form.training_level || !form.price}
+                disabled={publishing || !form.breed || !form.price || (isLitter ? !form.expected_birth_date : !form.training_level)}
                 className="w-full py-4"
-                style={{ background: publishing || !form.breed || !form.training_level || !form.price ? '#7C7A6E' : '#D85A1C', ...sans, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'white', cursor: publishing ? 'wait' : 'pointer', border: 'none' }}
+                style={{ background: publishing || !form.breed || !form.price || (isLitter ? !form.expected_birth_date : !form.training_level) ? '#7C7A6E' : '#D85A1C', ...sans, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'white', cursor: publishing ? 'wait' : 'pointer', border: 'none' }}
               >
                 {publishing ? 'Publishing…' : 'Publish Listing →'}
               </button>
@@ -874,12 +1137,12 @@ export default function SellPage() {
         {/* Navigation buttons */}
         <div className="flex items-center justify-between mt-6">
           {step > 0 ? (
-            <button onClick={() => setStep((s) => s - 1)} className="px-6 py-3" style={{ border: '1px solid #D9C8A6', ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0F0F0E', background: 'transparent', cursor: 'pointer' }}>
+            <button onClick={() => goToStep(step - 1)} className="px-6 py-3" style={{ border: '1px solid #D9C8A6', ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#0F0F0E', background: 'transparent', cursor: 'pointer' }}>
               ← Back
             </button>
           ) : <div />}
           {step < STEPS.length - 1 && (
-            <button onClick={() => setStep((s) => s + 1)} className="px-8 py-3" style={{ background: '#D85A1C', ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'white', cursor: 'pointer', border: 'none' }}>
+            <button onClick={() => goToStep(step + 1)} className="px-8 py-3" style={{ background: '#D85A1C', ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'white', cursor: 'pointer', border: 'none' }}>
               Continue →
             </button>
           )}

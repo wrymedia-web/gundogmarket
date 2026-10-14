@@ -1,6 +1,7 @@
 import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { entitlements } from '@/lib/plans'
 import EditListingForm from './edit-form'
 
 export const dynamic = 'force-dynamic'
@@ -19,6 +20,14 @@ export default async function EditListingPage({ params }: { params: Promise<{ id
 
   if (!dog) notFound()
   if (dog.seller_id !== user.id) redirect('/dashboard')
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('subscription_tier, subscription_status, extra_listings')
+    .eq('id', user.id)
+    .maybeSingle()
+  const ent = entitlements(profile?.subscription_tier, profile?.subscription_status, profile?.extra_listings ?? 0)
+  dog.max_photos = ent.maxPhotos
 
   return (
     <div className="max-w-2xl">

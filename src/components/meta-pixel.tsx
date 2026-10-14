@@ -74,6 +74,13 @@ function beacon(event: string, props?: Record<string, unknown>) {
   } catch { /* never break the page for analytics */ }
 }
 
+/** First-party-only event (site_events via /api/track) — for funnel steps
+ *  that aren't Meta/GA standard events, e.g. sell-flow progression. */
+export function trackEvent(event: string) {
+  if (typeof window === 'undefined') return
+  beacon(event)
+}
+
 /** Fire an event everywhere: Meta Pixel + GA4 + first-party store. */
 export function fbTrack(event: string, params?: Record<string, unknown>) {
   if (typeof window === 'undefined') return

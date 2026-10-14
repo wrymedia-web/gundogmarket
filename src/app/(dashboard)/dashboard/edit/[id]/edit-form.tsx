@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { updateMyListing, deleteMyListing, setMyListingStatus } from '../../actions'
+import PhotoManager from './photo-manager'
 
 const montserrat: React.CSSProperties = {
   fontFamily: "'Montserrat', var(--font-montserrat), system-ui, sans-serif",
@@ -32,17 +33,39 @@ type Dog = {
   status: string | null
   video_url: string | null
   pedigree_url: string | null
+  images: string[] | null
+  listing_type: string | null
+  expected_birth_date: string | null
+  go_home_date: string | null
+  sire_name: string | null
+  dam_name: string | null
+  sire_images: string[] | null
+  dam_images: string[] | null
+  kennel_logo_url: string | null
+  max_photos?: number
 }
 
 export default function EditListingForm({ dog }: { dog: Dog }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null)
+  const isLitter = dog.listing_type === 'litter'
+  const maxPhotos = dog.max_photos ?? 1
+  const [images, setImages] = useState<string[]>(dog.images ?? [])
+  const [sireImages, setSireImages] = useState<string[]>(dog.sire_images ?? [])
+  const [damImages, setDamImages] = useState<string[]>(dog.dam_images ?? [])
+  const [kennelLogo, setKennelLogo] = useState<string[]>(dog.kennel_logo_url ? [dog.kennel_logo_url] : [])
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setMsg(null)
     const formData = new FormData(e.currentTarget)
+    formData.set('images', JSON.stringify(images))
+    if (isLitter) {
+      formData.set('sire_images', JSON.stringify(sireImages))
+      formData.set('dam_images', JSON.stringify(damImages))
+      formData.set('kennel_logo_url', kennelLogo[0] ?? '')
+    }
     startTransition(async () => {
       try {
         await updateMyListing(dog.id, formData)
@@ -118,6 +141,27 @@ export default function EditListingForm({ dog }: { dog: Dog }) {
             <label style={labelStyle}>Breed</label>
             <input name="breed" defaultValue={dog.breed ?? ''} style={inputStyle} />
           </div>
+          {isLitter && (
+            <>
+              <div>
+                <label style={labelStyle}>Expected Birth Date</label>
+                <input name="expected_birth_date" type="date" defaultValue={dog.expected_birth_date ?? ''} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Estimated Go-Home Date</label>
+                <input name="go_home_date" type="date" defaultValue={dog.go_home_date ?? ''} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Sire (Father)</label>
+                <input name="sire_name" defaultValue={dog.sire_name ?? ''} style={inputStyle} />
+              </div>
+              <div>
+                <label style={labelStyle}>Dam (Mother)</label>
+                <input name="dam_name" defaultValue={dog.dam_name ?? ''} style={inputStyle} />
+              </div>
+            </>
+          )}
+          {!isLitter && (
           <div>
             <label style={labelStyle}>Training Level</label>
             <select name="training_level" defaultValue={dog.training_level ?? 'started'} style={{ ...inputStyle, cursor: 'pointer' }}>
@@ -127,6 +171,8 @@ export default function EditListingForm({ dog }: { dog: Dog }) {
               <option value="brood">Broodstock</option>
             </select>
           </div>
+          )}
+          {!isLitter && (
           <div>
             <label style={labelStyle}>Age</label>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -150,6 +196,8 @@ export default function EditListingForm({ dog }: { dog: Dog }) {
               </div>
             </div>
           </div>
+          )}
+          {!isLitter && (
           <div>
             <label style={labelStyle}>Gender</label>
             <select name="gender" defaultValue={dog.gender ?? 'male'} style={{ ...inputStyle, cursor: 'pointer' }}>
@@ -157,8 +205,9 @@ export default function EditListingForm({ dog }: { dog: Dog }) {
               <option value="female">Female</option>
             </select>
           </div>
+          )}
           <div>
-            <label style={labelStyle}>Price (USD)</label>
+            <label style={labelStyle}>{isLitter ? 'Price per Puppy (USD)' : 'Price (USD)'}</label>
             <input name="price" type="number" min="0" step="1" defaultValue={priceDollars} style={inputStyle} />
           </div>
           <div>
@@ -191,6 +240,23 @@ export default function EditListingForm({ dog }: { dog: Dog }) {
             <label style={labelStyle}>Pedigree URL</label>
             <input name="pedigree_url" type="url" defaultValue={dog.pedigree_url ?? ''} placeholder="https://" style={inputStyle} />
           </div>
+        </div>
+
+        <div className="space-y-4" style={{ borderTop: '1px solid #EAE4D6', paddingTop: 16 }}>
+          <PhotoManager
+            label={isLitter ? 'Puppy Photos' : 'Photos'}
+            hint={isLitter ? 'Once the litter arrives, add puppy photos here — they replace the parent photos as the main image.' : undefined}
+            images={images}
+            onChange={setImages}
+            max={maxPhotos}
+          />
+          {isLitter && (
+            <>
+              <PhotoManager label="Sire Photos" images={sireImages} onChange={setSireImages} max={3} tag="Sire" />
+              <PhotoManager label="Dam Photos" images={damImages} onChange={setDamImages} max={3} tag="Dam" />
+              <PhotoManager label="Kennel Logo" hint="Used as the main image when there are no photos." images={kennelLogo} onChange={setKennelLogo} max={1} />
+            </>
+          )}
         </div>
 
         {msg && <p style={{ ...inter, fontSize: 13, color: msg.ok ? '#166534' : '#B03A1F' }}>{msg.text}</p>}
