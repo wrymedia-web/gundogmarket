@@ -85,6 +85,7 @@ const REGISTRATION_OPTIONS = [
 
 interface FormData {
   listing_type: 'dog' | 'litter'
+  litter_status: 'expected' | 'born'
   expected_birth_date: string
   go_home_date: string
   sire_name: string
@@ -116,6 +117,7 @@ interface FormData {
 
 const defaultForm: FormData = {
   listing_type: 'dog',
+  litter_status: 'expected',
   expected_birth_date: '',
   go_home_date: '',
   sire_name: '',
@@ -201,6 +203,7 @@ export default function SellPage() {
   const supabase = createClient()
 
   const isLitter = form.listing_type === 'litter'
+  const isBorn = isLitter && form.litter_status === 'born'
   const STEPS = isLitter ? LITTER_STEPS : DOG_STEPS
 
   // Plan entitlements gate: publishing requires an active plan
@@ -456,7 +459,7 @@ export default function SellPage() {
         return
       }
       if (isLitter && !form.expected_birth_date) {
-        setError('Enter the expected birth date for the litter.')
+        setError(isBorn ? "Enter the litter's birth date." : 'Enter the expected birth date for the litter.')
         return
       }
       const priceCents = Math.round(parseFloat(form.price || '0') * 100)
@@ -464,7 +467,7 @@ export default function SellPage() {
       const ageMonthsRem = form.age_months_rem ? parseInt(form.age_months_rem, 10) : 0
       const ageMonths = isLitter ? null : ((ageYears || ageMonthsRem) ? (ageYears * 12 + ageMonthsRem) : null)
       const title = isLitter
-        ? (form.name ? `${form.name} — ${form.breed} Litter` : `${form.breed} — Expected Litter`)
+        ? (form.name ? `${form.name} — ${form.breed} Litter` : `${form.breed} — ${isBorn ? 'Puppies Available' : 'Expected Litter'}`)
         : (form.name ? `${form.name} — ${form.breed}` : form.breed)
       const { error: insertErr } = await supabase.from('dogs').insert({
         seller_id: user.id,
@@ -474,6 +477,7 @@ export default function SellPage() {
         gender: isLitter ? null : (form.gender || null),
         training_level: isLitter ? 'puppy' : form.training_level,
         listing_type: form.listing_type,
+        litter_status: isLitter ? form.litter_status : 'expected',
         expected_birth_date: isLitter ? (form.expected_birth_date || null) : null,
         go_home_date: isLitter ? (form.go_home_date || null) : null,
         sire_name: isLitter ? (form.sire_name.trim() || null) : null,
@@ -590,7 +594,7 @@ export default function SellPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {([
                     { value: 'dog', label: 'Individual Dog', desc: 'A puppy or adult dog that is ready to sell now' },
-                    { value: 'litter', label: 'Expected Litter', desc: 'A planned or on-the-way litter — no puppy photos required' },
+                    { value: 'litter', label: 'Litter', desc: 'Expected or already born — puppy photos optional until the litter arrives' },
                   ] as const).map((opt) => (
                     <button
                       key={opt.value}
@@ -619,9 +623,18 @@ export default function SellPage() {
                 <FieldInput value={form.name} onChange={(v) => update('name', v)} placeholder={isLitter ? 'e.g. Spring 2027 Addie × Gauge' : 'e.g. Duke'} />
               </div>
               {isLitter && (
+                <div>
+                  <InputLabel>Litter Status *</InputLabel>
+                  <FieldSelect value={form.litter_status} onChange={(v) => update('litter_status', v)}>
+                    <option value="expected">Expected — puppies not born yet</option>
+                    <option value="born">Born — puppies on the ground</option>
+                  </FieldSelect>
+                </div>
+              )}
+              {isLitter && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <InputLabel>Expected Birth Date *</InputLabel>
+                    <InputLabel>{isBorn ? 'Birth Date *' : 'Expected Birth Date *'}</InputLabel>
                     <FieldInput type="date" value={form.expected_birth_date} onChange={(v) => update('expected_birth_date', v)} />
                   </div>
                   <div>
@@ -799,7 +812,9 @@ export default function SellPage() {
                 <>
                   <div style={{ border: '1px solid #D9C8A6', background: '#FEF3C7', padding: '12px 16px' }}>
                     <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#92400E' }}>
-                      Puppies not born yet? No problem — upload photos of the sire and dam, or use your kennel logo as the main image. You can swap in puppy photos from your dashboard once the litter arrives.
+                      {isBorn
+                        ? 'Add puppy photos below — buyers want to see the pups. Sire and dam photos help your listing too.'
+                        : 'Puppies not born yet? No problem — upload photos of the sire and dam, or use your kennel logo as the main image. You can swap in puppy photos from your dashboard once the litter arrives.'}
                     </p>
                   </div>
                   {([
@@ -897,7 +912,7 @@ export default function SellPage() {
                 </>
               )}
               <div>
-                <InputLabel>{isLitter ? 'Puppy Photos (optional — add once the litter arrives)' : 'Photos'}</InputLabel>
+                <InputLabel>{isLitter ? (isBorn ? 'Puppy Photos' : 'Puppy Photos (optional — add once the litter arrives)') : 'Photos'}</InputLabel>
                 <input
                   ref={fileInputRef}
                   type="file"

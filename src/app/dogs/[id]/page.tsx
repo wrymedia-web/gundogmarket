@@ -33,20 +33,21 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const supabase = await createClient()
   const { data: dog } = await supabase
     .from('dogs')
-    .select('title, breed, training_level, price, location_state, images, description, listing_type, expected_birth_date, kennel_logo_url, sire_images, dam_images')
+    .select('title, breed, training_level, price, location_state, images, description, listing_type, litter_status, expected_birth_date, kennel_logo_url, sire_images, dam_images')
     .eq('id', id)
     .maybeSingle()
 
   if (!dog) return { title: 'Listing Not Found — GunDog Exchange' }
 
   const isLitter = dog.listing_type === 'litter'
+  const isBorn = isLitter && dog.litter_status === 'born'
   const level = TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel] ?? dog.training_level
   const priceStr = dog.price != null ? formatPrice(dog.price) : ''
   const title = isLitter
-    ? `${dog.title} — Expected ${formatLitterDate(dog.expected_birth_date)}${priceStr ? `, ${priceStr}/puppy` : ''}${dog.location_state ? ` — ${dog.location_state}` : ''}`
+    ? `${dog.title} — ${isBorn ? 'Born' : 'Expected'} ${formatLitterDate(dog.expected_birth_date)}${priceStr ? `, ${priceStr}/puppy` : ''}${dog.location_state ? ` — ${dog.location_state}` : ''}`
     : `${dog.title} — ${dog.breed}, ${level}${priceStr ? `, ${priceStr}` : ''}${dog.location_state ? ` — ${dog.location_state}` : ''}`
   const description = (dog.description as string | null)?.slice(0, 160)
-    || (isLitter ? `Expected ${dog.breed} litter on GunDog Exchange.` : `${dog.breed} (${level}) for sale on GunDog Exchange.`)
+    || (isLitter ? (isBorn ? `${dog.breed} litter — puppies available now on GunDog Exchange.` : `Expected ${dog.breed} litter on GunDog Exchange.`) : `${dog.breed} (${level}) for sale on GunDog Exchange.`)
   const firstImage = (dog.images as string[] | null)?.[0]
     ?? (dog.kennel_logo_url as string | null)
     ?? (dog.sire_images as string[] | null)?.[0]
@@ -89,6 +90,7 @@ export default async function DogProfilePage({
     .maybeSingle()
 
   const isLitter = dogRow.listing_type === 'litter'
+  const isBorn = isLitter && dogRow.litter_status === 'born'
   const sireImages = (dogRow.sire_images as string[] | null) ?? []
   const damImages = (dogRow.dam_images as string[] | null) ?? []
   const puppyImages = (dogRow.images as string[] | null) ?? []
@@ -146,7 +148,7 @@ export default async function DogProfilePage({
             <div className="p-5 sm:p-8 mb-6" style={{ background: 'white', border: '1px solid #D9C8A6' }}>
               <div className="flex flex-wrap items-center gap-3 mb-5">
                 <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px', background: '#D85A1C', color: 'white' }}>
-                  {isLitter ? 'Expected Litter' : TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel]}
+                  {isLitter ? (isBorn ? 'Litter Available' : 'Expected Litter') : TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel]}
                 </span>
                 {dog.featured && (
                   <span style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.08em', padding: '4px 10px', background: '#D85A1C', color: 'white' }}>Featured</span>
@@ -159,7 +161,7 @@ export default async function DogProfilePage({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6 p-5" style={{ background: '#EFE7D4', border: '1px solid #EFE7D4' }}>
                 {(isLitter ? [
                   { label: 'Breed', value: dog.breed },
-                  { label: 'Expected Birth', value: formatLitterDate(dog.expected_birth_date) },
+                  { label: isBorn ? 'Birth Date' : 'Expected Birth', value: formatLitterDate(dog.expected_birth_date) },
                   { label: 'Go-Home Date', value: formatLitterDate(dog.go_home_date) },
                   { label: 'Location', value: `${dog.location_city}, ${dog.location_state}` },
                 ] : [

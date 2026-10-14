@@ -92,7 +92,7 @@ export default function BrowsePage() {
     ;(async () => {
       const { data, error } = await supabase
         .from('dogs')
-        .select('id,title,breed,age_months,gender,training_level,price,location_state,location_city,description,health_certs,hunt_titles,images,status,featured,seller_id,created_at,listing_type,expected_birth_date,go_home_date,sire_images,dam_images,kennel_logo_url')
+        .select('id,title,breed,age_months,gender,training_level,price,location_state,location_city,description,health_certs,hunt_titles,images,status,featured,seller_id,created_at,listing_type,litter_status,expected_birth_date,go_home_date,sire_images,dam_images,kennel_logo_url')
         .eq('status', 'active')
         .order('featured', { ascending: false })
         .order('created_at', { ascending: false })
@@ -286,7 +286,7 @@ export default function BrowsePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {filtered.map((dog) => {
               const isLitter = dog.listing_type === 'litter'
-              const badgeLabel = isLitter ? 'Expected Litter' : [
+              const badgeLabel = isLitter ? (dog.litter_status === 'born' ? 'Litter Available' : 'Expected Litter') : [
                 TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel],
                 dog.hunt_titles.length > 0 ? 'Titled' : '',
               ].filter(Boolean).join(' · ')
@@ -312,7 +312,7 @@ export default function BrowsePage() {
                     <div style={{ padding: '28px 28px 26px' }}>
                       <p style={{ ...sans, fontWeight: 700, fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.1em', color: BLAZE, marginBottom: 12 }}>
                         {isLitter
-                          ? `${dog.breed} · Due ${formatLitterDate(dog.expected_birth_date)}`
+                          ? `${dog.breed} · ${dog.litter_status === 'born' ? 'Born' : 'Due'} ${formatLitterDate(dog.expected_birth_date)}`
                           : `${dog.breed} · ${dog.gender === 'male' ? 'Male' : 'Female'} · ${formatAge(dog.age_months)}`}
                       </p>
                       <h3 style={{ ...serif, fontSize: 36, color: BONE_SOFT, lineHeight: 1.05, marginBottom: 12 }}>
@@ -345,7 +345,7 @@ export default function BrowsePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
             {filtered.map((dog) => {
               const isLitter = dog.listing_type === 'litter'
-              const badgeLabel = isLitter ? 'Expected Litter' : [
+              const badgeLabel = isLitter ? (dog.litter_status === 'born' ? 'Litter Available' : 'Expected Litter') : [
                 TRAINING_LEVEL_LABELS[dog.training_level as TrainingLevel],
                 dog.hunt_titles.length > 0 ? 'Titled' : '',
               ].filter(Boolean).join(' · ')
@@ -385,7 +385,7 @@ export default function BrowsePage() {
                       {/* Breed · gender · age (or expected date for litters) */}
                       <p style={{ ...sans, fontWeight: 700, fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.1em', color: BLAZE, marginBottom: 10 }}>
                         {isLitter
-                          ? `${dog.breed} · Due ${formatLitterDate(dog.expected_birth_date)}`
+                          ? `${dog.breed} · ${dog.litter_status === 'born' ? 'Born' : 'Due'} ${formatLitterDate(dog.expected_birth_date)}`
                           : `${dog.breed} · ${dog.gender === 'male' ? 'Male' : 'Female'} · ${formatAge(dog.age_months)}`}
                       </p>
 

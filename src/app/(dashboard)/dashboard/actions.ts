@@ -55,6 +55,8 @@ export async function updateMyListing(dogId: string, formData: FormData) {
     updates.gender = formData.get('gender') || null
     updates.training_level = formData.get('training_level') || null
   } else {
+    const litterStatus = formData.get('litter_status')
+    if (litterStatus === 'expected' || litterStatus === 'born') updates.litter_status = litterStatus
     updates.expected_birth_date = formData.get('expected_birth_date') || null
     updates.go_home_date = formData.get('go_home_date') || null
     updates.sire_name = (formData.get('sire_name') as string)?.trim() || null

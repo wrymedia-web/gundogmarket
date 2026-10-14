@@ -35,6 +35,7 @@ type Dog = {
   pedigree_url: string | null
   images: string[] | null
   listing_type: string | null
+  litter_status: string | null
   expected_birth_date: string | null
   go_home_date: string | null
   sire_name: string | null
@@ -144,7 +145,14 @@ export default function EditListingForm({ dog }: { dog: Dog }) {
           {isLitter && (
             <>
               <div>
-                <label style={labelStyle}>Expected Birth Date</label>
+                <label style={labelStyle}>Litter Status</label>
+                <select name="litter_status" defaultValue={dog.litter_status ?? 'expected'} style={{ ...inputStyle, cursor: 'pointer' }}>
+                  <option value="expected">Expected — puppies not born yet</option>
+                  <option value="born">Born — puppies on the ground</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Birth Date (expected or actual)</label>
                 <input name="expected_birth_date" type="date" defaultValue={dog.expected_birth_date ?? ''} style={inputStyle} />
               </div>
               <div>

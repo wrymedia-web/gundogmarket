@@ -18,6 +18,7 @@ export interface DogListing {
   status: 'active' | 'pending' | 'sold' | 'draft'
   featured: boolean
   listing_type?: 'dog' | 'litter'
+  litter_status?: 'expected' | 'born' | null
   expected_birth_date?: string | null
   go_home_date?: string | null
   sire_name?: string | null
