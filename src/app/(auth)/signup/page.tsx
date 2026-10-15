@@ -44,6 +44,9 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [otpCode, setOtpCode] = useState('')
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState<string | null>(null)
 
   async function handleSignup(e: React.FormEvent) {
     e.preventDefault()
@@ -71,14 +74,62 @@ export default function SignupPage() {
     setLoading(false)
   }
 
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault()
+    setVerifying(true)
+    setVerifyError(null)
+
+    const supabase = createClient()
+    const { error } = await supabase.auth.verifyOtp({
+      email,
+      token: otpCode.trim(),
+      type: 'signup',
+    })
+
+    if (error) {
+      setVerifyError(error.message)
+      setVerifying(false)
+      return
+    }
+
+    router.push('/dashboard')
+  }
+
   if (success) {
     return (
       <div className="min-h-screen flex items-center justify-center px-8" style={{ background: '#EFE7D4' }}>
         <div className="max-w-sm w-full text-center">
           <div style={{ width: 56, height: 56, background: '#D85A1C', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, margin: '0 auto 24px' }}>✉️</div>
-          <h1 style={{ ...display, fontSize: 28, color: '#0F0F0E', marginBottom: 12 }}>Check Your Email</h1>
-          <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#7C7A6E', lineHeight: 1.6 }}>
-            We sent a confirmation link to <strong>{email}</strong>. Click it to activate your account.
+          <h1 style={{ ...display, fontSize: 28, color: '#0F0F0E', marginBottom: 12 }}>Verify Your Email</h1>
+          <p style={{ ...sans, fontWeight: 400, fontSize: 16, color: '#7C7A6E', lineHeight: 1.6, marginBottom: 24 }}>
+            We sent a confirmation code to <strong>{email}</strong>. Enter it below.
+          </p>
+
+          {verifyError && (
+            <div className="mb-5 px-4 py-3 text-left" style={{ background: '#fee2e2', border: '1px solid #fca5a5', ...sans, fontWeight: 400, fontSize: 15, color: '#991b1b' }}>
+              {verifyError}
+            </div>
+          )}
+
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
+            <input
+              type="text"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value)}
+              placeholder="Enter code"
+              required
+              maxLength={8}
+              autoFocus
+              className="w-full px-4 py-3 outline-none text-center"
+              style={{ ...fieldInput, fontSize: 24, letterSpacing: '0.3em', fontFamily: 'monospace' }}
+            />
+            <button type="submit" disabled={verifying || otpCode.trim().length < 6} className="w-full py-4 disabled:opacity-60" style={{ background: '#D85A1C', ...sans, fontWeight: 700, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'white', cursor: verifying ? 'not-allowed' : 'pointer', border: 'none' }}>
+              {verifying ? 'Verifying...' : 'Verify & Continue'}
+            </button>
+          </form>
+
+          <p style={{ ...sans, fontWeight: 400, fontSize: 13, color: '#7C7A6E', marginTop: 16 }}>
+            Didn't receive it? Check your spam folder.
           </p>
         </div>
       </div>
