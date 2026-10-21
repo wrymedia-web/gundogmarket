@@ -43,6 +43,8 @@ function visitorId(): string {
   }
 }
 
+const UTM_TTL_MS = 90 * 24 * 60 * 60 * 1000 // match the 90d retargeting window
+
 function utm(): { utmSource?: string; utmMedium?: string; utmCampaign?: string } {
   try {
     const p = new URLSearchParams(window.location.search)
@@ -51,9 +53,17 @@ function utm(): { utmSource?: string; utmMedium?: string; utmCampaign?: string }
       utmMedium: p.get('utm_medium') ?? undefined,
       utmCampaign: p.get('utm_campaign') ?? undefined,
     }
-    if (fresh.utmSource) sessionStorage.setItem('gde_utm', JSON.stringify(fresh))
-    const stored = sessionStorage.getItem('gde_utm')
-    return fresh.utmSource ? fresh : stored ? JSON.parse(stored) : {}
+    // Last-touch UTM in localStorage: sessionStorage is per-tab, so campaign
+    // attribution died on every new-tab signup or return visit.
+    if (fresh.utmSource) {
+      localStorage.setItem('gde_utm', JSON.stringify({ ...fresh, ts: Date.now() }))
+      return fresh
+    }
+    const raw = localStorage.getItem('gde_utm') ?? sessionStorage.getItem('gde_utm')
+    if (!raw) return {}
+    const stored = JSON.parse(raw)
+    if (stored.ts && Date.now() - stored.ts > UTM_TTL_MS) return {}
+    return { utmSource: stored.utmSource, utmMedium: stored.utmMedium, utmCampaign: stored.utmCampaign }
   } catch {
     return {}
   }

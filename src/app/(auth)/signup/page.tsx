@@ -69,7 +69,16 @@ export default function SignupPage() {
       return
     }
 
-    fbTrack('CompleteRegistration')
+    // Re-submits (e.g. "didn't get the email" second click) succeed in Supabase
+    // and were double-firing CompleteRegistration — guard to once per email.
+    try {
+      if (localStorage.getItem('gde_reg_fired') !== email) {
+        fbTrack('CompleteRegistration')
+        localStorage.setItem('gde_reg_fired', email)
+      }
+    } catch {
+      fbTrack('CompleteRegistration')
+    }
     setSuccess(true)
     setLoading(false)
   }
